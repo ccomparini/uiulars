@@ -1,0 +1,55 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="test.css" type "text/css">
+  </head>
+  <body>
+    <div>
+      TESTING one 2 tree
+    </div>
+    <div>
+      <div>
+        At the tone, the time will be: 
+        <span id="klok" data-shows="epoch"> </span>
+      </div>
+      <div>
+        <div>Here are the fruitbats:</div>
+        <div class="dispy" id="fruitbat" data-expand>
+          My name is <span id="namespan" data-shows="name">🐄</span> and I
+          have eaten <span id="fruitspan" data-shows="fruits_eaten">∅</span> fruits.
+        </div>
+      </div>
+      <hr>
+      <div>
+        <div>Rename the fruitbats here:</div>
+        <div class="dispy" data-expand>
+          <input type="text" class="fruitbat-renamer" data-controls="name">
+        </div>
+      </div>
+    </div>
+  </body>
+  <script src="./uiulator.js"> </script>
+  <script>
+    var fruitbats = [
+      { name: "Fred",               fruits_eaten: 0 },
+      { name: "Henrique",           fruits_eaten: 0 },
+      { name: "Smuggly-pugglewitz", fruits_eaten: 0 },
+    ];
+
+    var time = {
+      epoch: "timeless",
+    };
+
+    var misc = uiulator(fruitbats, document.querySelectorAll(".dispy"));
+    var kup  = uiulator(time, document.getElementById("klok"));
+    window.setInterval(function() {
+      time.epoch = Date.now()/1000;
+      kup.update();
+    }, 100);
+
+    window.setInterval(function() {
+      fruitbats[Math.floor(Math.random() * fruitbats.length)].fruits_eaten++;
+      misc.update();
+    }, 1000);
+  </script>
+</html>
+
