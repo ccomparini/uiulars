@@ -10,7 +10,7 @@
    - apply the uiulator something like:
        var my_data = { x: 1, y: 2 }; // or whatever
        var uu = uiulator(my_data, document.querySelectorAll(".uistuffs");
-       uu.update();  // refresh the display. (typoically call this from an event)
+       uu.update();  // refresh the display. (typically call this from an event)
 
      uiulator can take a list of elements or a single element.
 
