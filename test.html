@@ -15,8 +15,8 @@
         <div>Here are the fruitbats:</div>
         <div class="dispy" id="fruitbat" data-expand>
           My name is <span id="namespan" data-shows="name">🐄</span> and I
-          have eaten <span id="fruitspan" data-shows="fruits_eaten">∅</span> fruits.
-          My secret nom is: "<span data-shows="secrets.nomnom"></span>".
+          have eaten <span id="fruitspan" data-shows="fruitsEaten">∅</span> fruits.
+          My nom de guerre is: <span data-shows="secrets.nom"></span>.
         </div>
       </div>
       <hr>
@@ -31,9 +31,9 @@
   <script src="./uiulator.js"> </script>
   <script>
     var fruitbats = [
-      { name: "Fred",               fruits_eaten: 0 },
-      { name: "Henrique",           fruits_eaten: 0, secrets: "yes" },
-      { name: "Smuggly-pugglewitz", fruits_eaten: 0, secrets: { nomnom: "spycow" } },
+      { name: "Fred",               fruitsEaten: 0 },
+      { name: "Henrique",           fruitsEaten: 0, secrets: "yes" },
+      { name: "Smuggly-pugglewitz", fruitsEaten: 0, secrets: { nom: "spycow" } },
     ];
 
     var time = {
@@ -48,9 +48,19 @@
     }, 100);
 
     window.setInterval(function() {
-      fruitbats[Math.floor(Math.random() * fruitbats.length)].fruits_eaten++;
+      fruitbats[Math.floor(Math.random() * fruitbats.length)].fruitsEaten++;
       misc.update();
     }, 1000);
+
+    // after 2 seconds, add a fruitbat:
+    const addBats = window.setInterval(function() {
+        fruitbats.push({ name: "<a href='boo'>New Guy</a>", fruitsEaten: 0 });
+
+        // 10 is enough fruitbats:
+        if(fruitbats.length >= 10) {
+            window.clearInterval(addBats);
+        }
+    }, 2000)
   </script>
 </html>
 

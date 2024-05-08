@@ -1,3 +1,5 @@
+"use strict"
+
 /**
   uiulator - a simple way to display javascript state in html.
 
@@ -28,13 +30,15 @@ var uiulator = function(dataSource, elements) {
     var showers = [ ];
 
     function evaluateMember(containingObject, variable) {
-        let val = containingObject[variable];
-        if (typeof val === "function") {
-            val = val.apply(containingObject);
-            // handle promises by making every result a promise
-            // which ...  can it call update?
-            //Promise.resolve(val).then(function(value) { });
-
+        let val;
+        if(typeof containingObject !== 'undefined') {
+            val = containingObject[variable];
+            if (typeof val === "function") {
+                val = val.apply(containingObject);
+                // handle promises by making every result a promise
+                // which ...  can it call update?
+                //Promise.resolve(val).then(function(value) { });
+            }
         }
         return val;
     }
@@ -70,10 +74,6 @@ var uiulator = function(dataSource, elements) {
             let objs = parsedFrom.containingObject;
             if(parsedFrom.variable)
                 objs = evaluateMember(objs, parsedFrom.variable);
-/*
-            if(parsedFrom.variable)
-                objs = objs[parsedFrom.variable];
- */
 
             for (const key in objs) {
                 
@@ -103,7 +103,6 @@ var uiulator = function(dataSource, elements) {
         let kids = protoElement.children;
         if(!kids) return;
         for (let kid = kids[0]; !!kid ; kid = kid.nextSibling) {
-            //expandElements(kid, scope);
             _expand(kid, scope);
         }
 
@@ -127,14 +126,9 @@ var uiulator = function(dataSource, elements) {
             obj = obj[parts[pi]];
         }
 
-        if(!obj) {
-            obj = new Map;
-            console.log("could not parse display def for " + variable);
-        }
 
         return {
             element: elem,
-            // XXX rename containingObject
             containingObject: obj,
             variable: parts[parts.length - 1],
         };
