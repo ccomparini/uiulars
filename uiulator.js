@@ -1,5 +1,5 @@
 /**
-  uiular - a simple way to display javascript state in html.
+  uiulator - a simple way to display javascript state in html.
 
   How to use this:
 
