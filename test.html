@@ -16,6 +16,7 @@
         <div class="dispy" id="fruitbat" data-expand>
           My name is <span id="namespan" data-shows="name">🐄</span> and I
           have eaten <span id="fruitspan" data-shows="fruits_eaten">∅</span> fruits.
+          My secret nom is: "<span data-shows="secrets.nomnom"></span>".
         </div>
       </div>
       <hr>
@@ -31,8 +32,8 @@
   <script>
     var fruitbats = [
       { name: "Fred",               fruits_eaten: 0 },
-      { name: "Henrique",           fruits_eaten: 0 },
-      { name: "Smuggly-pugglewitz", fruits_eaten: 0 },
+      { name: "Henrique",           fruits_eaten: 0, secrets: "yes" },
+      { name: "Smuggly-pugglewitz", fruits_eaten: 0, secrets: { nomnom: "spycow" } },
     ];
 
     var time = {
