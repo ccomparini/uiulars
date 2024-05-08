@@ -27,6 +27,18 @@ var uiulator = function(dataSource, elements) {
 
     var showers = [ ];
 
+    function evaluateMember(containingObject, variable) {
+        let val = containingObject[variable];
+        if (typeof val === "function") {
+            val = val.apply(containingObject);
+            // handle promises by making every result a promise
+            // which ...  can it call update?
+            //Promise.resolve(val).then(function(value) { });
+
+        }
+        return val;
+    }
+
     // expands elements with "data-expand", creating one copy of the
     // element for each item in the group specified, and with data-scope
     // set to the corresponding item in the group.
@@ -54,12 +66,14 @@ var uiulator = function(dataSource, elements) {
 
             // for each thing in the containingObject[variable],
             // we need to make a copy of the prototype html element
-            // to represent that thing.  (let's say containing objects
-            // have to be maps because js isn't consistent about
-            // collections :P)
+            // to represent that thing:
             let objs = parsedFrom.containingObject;
             if(parsedFrom.variable)
+                objs = evaluateMember(objs, parsedFrom.variable);
+/*
+            if(parsedFrom.variable)
                 objs = objs[parsedFrom.variable];
+ */
 
             for (const key in objs) {
                 
@@ -189,10 +203,7 @@ var uiulator = function(dataSource, elements) {
     function updateDisplays() {
         for (let di = showers.length - 1; di >= 0; di--) {
             let shower = showers[di];
-            let val = shower.containingObject[shower.variable];
-            if (typeof val === "function") {
-                val = val();
-            }
+            let val = evaluateMember(shower.containingObject, shower.variable);
             if(document.activeElement !== shower.element) {
                 shower.element.textContent = val;
                 shower.element.value = val; // for inputs
@@ -204,7 +215,7 @@ var uiulator = function(dataSource, elements) {
     if(typeof elements.forEach === "undefined") {
         // .. err.. and it turns out an htmlCollection isn't like
         // an array.  but let's attempt to support it, even though
-        // browsers and js  (naturally) will try to thwart us:
+        // browsers and js (naturally) will try to thwart us:
         let elst = Object.prototype.toString.call(elements);
         if(/HTMLCollection/.test(elst)) {
             // looks like it's probably an HTML collection:
