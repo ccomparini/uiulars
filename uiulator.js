@@ -27,6 +27,32 @@
  */
 var uiulator = function(dataSource, elements) {
 
+    // if no elements were specified, do them all!  This is typically
+    // a one-off, so I'm not too worried about performance.  If callers
+    // are concerned, then can narrow the scope themselves.
+    if(typeof elements === "undefined") {
+        elements = [ document ];
+    }
+
+    // support single elements as well as array:
+    if(typeof elements.forEach === "undefined") {
+        // .. err.. and it turns out an htmlCollection isn't like
+        // an array.  but let's attempt to support it, even though
+        // browsers and js (naturally) will try to thwart us:
+        let elst = Object.prototype.toString.call(elements);
+        if(/HTMLCollection/.test(elst)) {
+            // looks like it's probably an HTML collection:
+            elements = Array.prototype.slice.call(elements);
+        } else {
+            // it's some kind of single object.  create a one
+            // element array to hold it so that we can just deal
+            // with arrays from here out:
+            elements = [ elements ];
+        }
+    }
+
+/*
+
     var showers = [ ];
 
     function evaluateMember(containingObject, variable) {
@@ -190,10 +216,12 @@ var uiulator = function(dataSource, elements) {
             def.containingObject[def.variable] = el.innerText;
         }
     }
+ */
 
     /**
       Call this periodically to update displays.
      */
+ /*
     function updateDisplays() {
         for (let di = showers.length - 1; di >= 0; di--) {
             let shower = showers[di];
@@ -205,26 +233,103 @@ var uiulator = function(dataSource, elements) {
         }
     }
 
-    // support single elements as well as array:
-    if(typeof elements.forEach === "undefined") {
-        // .. err.. and it turns out an htmlCollection isn't like
-        // an array.  but let's attempt to support it, even though
-        // browsers and js (naturally) will try to thwart us:
-        let elst = Object.prototype.toString.call(elements);
-        if(/HTMLCollection/.test(elst)) {
-            // looks like it's probably an HTML collection:
-            elements = Array.prototype.slice.call(elements);
-        } else {
-            // it's some kind of single object.  create a one
-            // element array to hold it so that we can just deal
-            // with arrays from here out:
-            elements = [ elements ];
-        }
-    }
-
     // here's where we apply data to the target stuffles:
     elements.forEach(function(el) { expandElements(el, dataSource); });
     elements.forEach(function(el) { bindDisplay   (el, dataSource); });
+
+    updateDisplays();
+ */
+
+    function parseVarSpec(vs) {
+        if(vs === undefined)
+            return [ ];
+
+/// XXX consider the '*' - in or out?
+        vs = vs.replace(/[^A-Za-z_0-9*.]/g, "");
+        if(!vs.length)
+            return [ ];
+
+        return vs.split(".");
+    }
+
+    function evaluate(data, vs) {
+        for(const varr of vs) {
+            if(data[varr] == undefined)
+                return undefined;
+
+            data = data[varr];
+        }
+        return data;
+    }
+
+    // this is sepparate from upFunc because the order matters
+    const updaters = [
+        "scope", // grr should this then be "scopes"?
+        "expands",
+        "shows",
+        "controls",
+    ];
+// NOTE: window["functionName"](arguments);
+
+    const upFunc = {
+        scope: function(elem, data, vs) {
+            // data = evaluate data[vs]; continue on elem with new data
+            return [ elem, evaluate(data, vs) ];
+        },
+        expands: function(elem, data, vs) {
+            // - rescope data by vs;
+            // - for each key of data
+            //   - copy elem
+            //   - continue on copy of elem, passing key as vs
+            // don't recurse on elem itself.
+            return [ undefined, undefined ];
+        },
+        shows: function(elem, data, vs) {
+            // don't change the active element - it's very annoying
+            // for users if they are trying to copy and paste or type
+            // something in and you change it:
+            if(document.activeElement !== elem) {
+                const val = evaluate(data, vs);
+                elem.textContent = val;
+                elem.value = val; // for inputs
+            }
+            
+            return [ elem, data ];
+        },
+        controls: function(elem, data, vs) {
+            // - if no control function, install one.
+            // - evaluate data[vs] and show it in elem
+            // (POSSIBLY this one should be implemented by just installing
+            // the control function and changing data-controls to data-shows...)
+            return [ elem, data ];
+        },
+    }
+
+    function updateElements(elem, data) {
+        const ds = elem.dataset;
+        if(ds) {
+            for(const updater of updaters) {
+                if(ds[updater]) {
+                    [elem, data] = upFunc[updater](
+                        elem, data, parseVarSpec(ds[updater])
+                    );
+                }
+            }
+        }
+
+        if(elem) {
+            for(const kid of elem.childNodes) {
+                updateElements(kid, data);
+            }
+        }
+    }
+
+    function updateDisplays() {
+        for(const elem of elements) {
+            updateElements(elem, dataSource);
+        }
+    }
+
     updateDisplays();
 
     return {
@@ -232,7 +337,7 @@ var uiulator = function(dataSource, elements) {
         /**
            update() - call this to sync the data to the display
          */
-        update: function() { updateDisplays() }
+        update: updateDisplays,
     };
 
 };
