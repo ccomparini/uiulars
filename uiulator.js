@@ -53,7 +53,7 @@ var uiulator = function(dataSource, elements) {
 
     function _expand(protoElement, scope) {
         let dataset = protoElement.dataset || { };
-        let expand = dataset.expand;
+        let expand = dataset.expands;
         let newElements = [ ];
 
         scope = rescope(protoElement, scope);
@@ -66,7 +66,7 @@ var uiulator = function(dataSource, elements) {
             // at this point, we are going to expand this thing, and we
             // don't want its clones inheriting "expand" (which could
             // lead to infinite expansion), so kill the data-expand:
-            delete protoElement.dataset.expand;
+            delete protoElement.dataset.expands;
 
             // for each thing in the containingObject[variable],
             // we need to make a copy of the prototype html element

@@ -1,66 +1,200 @@
 <html>
   <head>
+    <link rel="stylesheet" href="/fbm.css" type "text/css">
     <link rel="stylesheet" href="test.css" type "text/css">
   </head>
   <body>
-    <div>
-      TESTING one 2 tree
+    <div id="planter-box" data-expands="plants">
+      TESTING one 2 <span data-controls="plant_type">tree</span>
     </div>
     <div>
       <div>
         At the tone, the time will be: 
         <span id="klok" data-shows="epoch"> </span>
       </div>
-      <div>
-        <div>Here are the fruitbats:</div>
-        <div class="dispy" id="fruitbat" data-expand>
-          My name is <span id="namespan" data-shows="name">🐄</span> and I
-          have eaten <span id="fruitspan" data-shows="fruitsEaten">∅</span> fruits.
-          My nom de guerre is: <span data-shows="secrets.nom"></span>.
+      <div class="fruitbat-display">
+        <div id="fruitbat-counter">There are <span data-shows="length"></span> fruitbats: </div>
+        <div id="fruitbat" data-expands>
+          My name is <span style="font-weight: bold" id="namespan" data-shows="name">🐄</span>,
+          and I have eaten <span id="fruitspan" data-shows="fruitsEaten">∅</span> fruits.
+          <span class="expander-as-if" data-expands="secrets">My nom de guerre is: <span is="show-secret" data-shows=""></span>.</span>
         </div>
       </div>
       <hr>
       <div>
         <div>Rename the fruitbats here:</div>
-        <div class="dispy" data-expand>
-          <input type="text" class="fruitbat-renamer" data-controls="name">
+        <div class="fruitbat-display" data-expands>
+          <input type="text" style="width: 40em" class="fruitbat-renamer" data-controls="name">
         </div>
       </div>
     </div>
   </body>
   <script src="./uiulator.js"> </script>
   <script>
-    var fruitbats = [
-      { name: "Fred",               fruitsEaten: 0 },
-      { name: "Henrique",           fruitsEaten: 0, secrets: "yes" },
-      { name: "Smuggly-pugglewitz", fruitsEaten: 0, secrets: { nom: "spycow" } },
+    const plants = undefined; //  = [ ];
+    const fruitbats = [
+      { name: newName(), fruitsEaten: 0 },
+      { name: newName(), fruitsEaten: 0, secrets: "yes" },
+      { name: newName(), fruitsEaten: 0, secrets: { nom: "spycow" } },
     ];
 
-    var time = {
+    const time = {
       epoch: "timeless",
     };
 
-    var misc = uiulator(fruitbats, document.querySelectorAll(".dispy"));
-    var kup  = uiulator(time, document.getElementById("klok"));
+    function randInt(maxOrFrom) {
+      if(typeof maxOrFrom.length !== "undefined")
+          maxOrFrom = maxOrFrom.length;
+
+      return Math.floor(Math.random() * maxOrFrom);
+    }
+
+    function randItem(from) {
+      return from[randInt(from)];
+    }
+
+    function nomDeGuerre(name) {
+       const nom = newName(1).replace(/"/g, '');
+       return nom;
+    }
+
+    function addSuffixOrPrefix(name) {
+      const prefixes = [ ', child of ', ', daughter of ', ', son of ', 'Mac' ];
+      const suffixes = [
+        'son', 'dotter', 'owitz', 'berger', 'potty', 'ular', 'othy',
+        ' the elder', ' the younger', 'ski', 'ovitch', 'ly',
+        ' the unspeakably horrible', 
+      ];
+
+      // it's getting a suffix or prefix, so remove all quotes:
+      name = name.replace(/"/g, '');
+
+      if(randInt(2)) {
+        const prefix = randItem(prefixes);
+        if(prefix[prefix.length - 1] !== ' ') {
+          // no space at the end of the prefix.... 
+          if(name.slice(0, 4) === 'the ') {
+            // so we'll want to remove the "the"
+            name = name.slice(4);
+          }
+        }
+        return `${randItem(prefixes)}${name}`
+      } else {
+        return `${name}${randItem(suffixes)}`
+      }
+    }
+
+    function newName(len) {
+      len = len ?? Math.floor(Math.sqrt(Math.random() * 8));
+
+      const nameParts = [
+        '"Blackheart"', 'Smooberry', 'Burger', '"Hyperspace"', 'Nevil',
+        'Schmed', 'McSpangberger', 'Appocalypse', 'Chevins', 'Young',
+        'Space', '"Smiley"', 'Bozon', 'Strawberry', 'Margaret',
+        'Moonpie',  'Homeontherange', 'Alfred', 'Theosophe', 'Alastair',
+        'the Almighty', '"Chippers"', 'Ruthless', '"the Body"',
+        'Luxuryyacht', 'Timewarp', 'Becket', 'Chipperson', 'Higgly',
+        'Freckle', 'Jennifer', 'Courtney', 'Samuel', '"the Octopus"',
+        'Fred', 'Henrique', 'Puggle', 'Smuggly', '"Smooth Operator"',
+        '"Gabby"',
+      ];
+      let name = "";
+      for(let partsLeft = len; partsLeft >= 0; partsLeft--) {
+        const nameNum = randInt(nameParts);
+        let np = nameParts.splice(nameNum, 1, addSuffixOrPrefix(nameParts[nameNum]))[0];
+
+        if(np[0] === '"') {
+          // only want one nickname, so strip existing nickname quotes:
+          name = name.replace(/"/g, '');
+        }
+
+        if(partsLeft === 0) {
+          if(name.length) {
+            // .. last name may be treated differently:
+            if(np[0] === '"') {
+              np = `(AKA ${np})`;
+            } else if(randInt(5)) {
+              np = addSuffixOrPrefix(np);
+            }
+          }
+        }
+
+        if(np.slice(0, 4) === 'the ') {
+          if(name.length === 0) {
+            // if the name starts with "the", either
+            // capitalize it or remove the "the"
+            np = np.slice(4); // (remove it, then maybe add 'The')
+            if(randInt(2)) {
+              np = `The ${np}`;
+            }
+          } else if(partsLeft) {
+            // we're somewhere in the middle of the
+            // name, so add a comma:
+            np = `, ${np}`;
+          }
+        }
+
+        // .. stuff like:
+        //    "the Octopus", daughter of Smoo
+        // needs to be change to:
+        //    the Octopus, daughter of Smoo
+        if(np[0] === ',') {
+          // .. in fact, in this case let's kill all existing
+          // quotes and commas:
+          name = name.replace(/[",]/g, '');
+        }
+
+
+        if(name.length === 0) {
+          name = np;
+        } else {
+          if(np[0] !== ',')
+            name += ' ';
+          name += np;
+        }
+      }
+      return name;
+    }
+
+    uiulator(plants, document.getElementById("planter-box"));
+
+    const kup = uiulator(time, document.getElementById("klok"));
     window.setInterval(function() {
       time.epoch = Date.now()/1000;
       kup.update();
     }, 100);
 
+    const misc = uiulator(fruitbats, document.querySelectorAll(".fruitbat-display"));
     window.setInterval(function() {
       fruitbats[Math.floor(Math.random() * fruitbats.length)].fruitsEaten++;
       misc.update();
     }, 1000);
 
-    // after 2 seconds, add a fruitbat:
-    const addBats = window.setInterval(function() {
-        fruitbats.push({ name: "<a href='boo'>New Guy</a>", fruitsEaten: 0 });
-
-        // 10 is enough fruitbats:
-        if(fruitbats.length >= 10) {
-            window.clearInterval(addBats);
+    // after 2 seconds, add or remove a fruitbat:
+    const addOrRemoveBats = window.setInterval(function() {
+        let add = true;
+        if(fruitbats.length > 6) {
+            add = false;
+        } else if(fruitbats.length >= 3) {
+            add = Math.random() > 0.4;
         }
-    }, 2000)
+
+        if(add) {
+            //fruitbats.push({ name: "<a href='boo'>New Guy</a>", fruitsEaten: 0 });
+            let secrets;
+//            if(randInt(4) === 0) {
+                secrets = { nom: nomDeGuerre() };
+//            }
+
+            fruitbats.push({ name: newName(), fruitsEaten: 0, secrets: secrets });
+        } else {
+            // pick one and remove it:
+            const rn = Math.floor(Math.random() * fruitbats.length);
+            fruitbats.splice(rn, 1);
+        }
+
+    }, 2000);
+
   </script>
 </html>
 
