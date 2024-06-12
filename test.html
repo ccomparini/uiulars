@@ -53,7 +53,7 @@
       return from[randInt(from)];
     }
 
-    function nomDeGuerre(name) {
+    function nomDeGuerre() {
        const nom = newName(1).replace(/"/g, '');
        return nom;
     }
@@ -85,7 +85,7 @@
     }
 
     function newName(len) {
-      len = len ?? Math.floor(Math.sqrt(Math.random() * 8));
+      len = len ?? Math.floor(Math.sqrt(Math.random() * 8) + 1);
 
       const nameParts = [
         '"Blackheart"', 'Smooberry', 'Burger', '"Hyperspace"', 'Nevil',
@@ -99,7 +99,7 @@
         '"Gabby"',
       ];
       let name = "";
-      for(let partsLeft = len; partsLeft >= 0; partsLeft--) {
+      for(let partsLeft = len; partsLeft > 0; partsLeft--) {
         const nameNum = randInt(nameParts);
         let np = nameParts.splice(nameNum, 1, addSuffixOrPrefix(nameParts[nameNum]))[0];
 
@@ -182,9 +182,9 @@
         if(add) {
             //fruitbats.push({ name: "<a href='boo'>New Guy</a>", fruitsEaten: 0 });
             let secrets;
-//            if(randInt(4) === 0) {
+            if(randInt(4) === 0) {
                 secrets = { nom: nomDeGuerre() };
-//            }
+            }
 
             fruitbats.push({ name: newName(), fruitsEaten: 0, secrets: secrets });
         } else {

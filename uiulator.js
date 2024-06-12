@@ -240,11 +240,21 @@ var uiulator = function(dataSource, elements) {
     updateDisplays();
  */
 
+/*
+TODO:
+   - controls
+   - hide the expanders
+   - fix ids in clones somehow so they don't collide
+   - add default update intervals
+   - option for tables:  cloning headers makes td?
+   - maybe change the data-shows etc to like data-uiulator-shows
+ */
+
     function parseVarSpec(vs) {
         if(vs === undefined)
             return [ ];
 
-/// XXX consider the '*' - in or out?
+// XXX consider the '*' - in or out?
         vs = vs.replace(/[^A-Za-z_0-9*.]/g, "");
         if(!vs.length)
             return [ ];
@@ -253,6 +263,9 @@ var uiulator = function(dataSource, elements) {
     }
 
     function evaluate(data, vs) {
+        if(data === undefined || vs === undefined)
+            return data;
+
         for(const varr of vs) {
             if(data[varr] == undefined)
                 return undefined;
@@ -262,6 +275,19 @@ var uiulator = function(dataSource, elements) {
         return data;
     }
 
+    function cloneAndExpand(elem, data, vs) {
+        let newElem = elem.cloneNode(true);
+        // OK so here's how we'll do it: the new element gets
+        // scoped according to the vs passed.
+        newElem.dataset.scope = vs;
+        elem.parentElement.insertBefore(newElem, elem);
+
+// TODO change all the sub IDs in the new element tree so they don't collide
+        updateElements(newElem, data);
+
+        return newElem;
+    }
+
     // this is sepparate from upFunc because the order matters
     const updaters = [
         "scope", // grr should this then be "scopes"?
@@ -269,7 +295,9 @@ var uiulator = function(dataSource, elements) {
         "shows",
         "controls",
     ];
-// NOTE: window["functionName"](arguments);
+
+    const protoElem      = Symbol();
+    const generatedElems = Symbol();
 
     const upFunc = {
         scope: function(elem, data, vs) {
@@ -277,11 +305,35 @@ var uiulator = function(dataSource, elements) {
             return [ elem, evaluate(data, vs) ];
         },
         expands: function(elem, data, vs) {
+            // - delete previously generated elements
+            let genEls = elem[generatedElems];
+            if(genEls) {
+                for(const el of genEls) {
+                    el.remove();
+                }
+            }
+            genEls = [ ];
+
             // - rescope data by vs;
+            data = evaluate(data, vs);
+
             // - for each key of data
             //   - copy elem
             //   - continue on copy of elem, passing key as vs
-            // don't recurse on elem itself.
+            if(data) {
+                const oldExpands = elem.dataset.expands;
+                delete elem.dataset.expands;
+                for(const key in data) {
+                    genEls.push(cloneAndExpand(elem, data, key));
+                }
+                elem.dataset.expands = oldExpands;
+            }
+
+            elem[generatedElems] = genEls;
+
+            // callers should consider themselves done with this
+            // part of the tree; all other updates will be done
+            // on the clones.
             return [ undefined, undefined ];
         },
         shows: function(elem, data, vs) {
@@ -305,15 +357,17 @@ var uiulator = function(dataSource, elements) {
         },
     }
 
+    // updates the element passed, and all its children
     function updateElements(elem, data) {
         const ds = elem.dataset;
         if(ds) {
             for(const updater of updaters) {
-                if(ds[updater]) {
+                if(ds[updater] !== undefined) {
                     [elem, data] = upFunc[updater](
                         elem, data, parseVarSpec(ds[updater])
                     );
                 }
+                if(!elem) break;
             }
         }
 
