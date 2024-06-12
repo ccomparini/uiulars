@@ -243,12 +243,19 @@ var uiulator = function(dataSource, elements) {
 /*
 TODO:
    - controls
-   - hide the expanders
+   x hide the expanders
+   - expand n times if it's not a collection but is numeric?
+   - kill '*' or use it.
    - fix ids in clones somehow so they don't collide
    - add default update intervals
    - option for tables:  cloning headers makes td?
+     - test tables
    - maybe change the data-shows etc to like data-uiulator-shows
  */
+
+    // these are for stashing data in expander elements:
+    const origStyles     = Symbol();
+    const generatedElems = Symbol();
 
     function parseVarSpec(vs) {
         if(vs === undefined)
@@ -277,8 +284,13 @@ TODO:
 
     function cloneAndExpand(elem, data, vs) {
         let newElem = elem.cloneNode(true);
+
+        for(const stel in elem[origStyles]) {
+            newElem.style[stel] = elem[origStyles][stel];
+        }
+
         // OK so here's how we'll do it: the new element gets
-        // scoped according to the vs passed.
+        // scoped according to the vs passed:
         newElem.dataset.scope = vs;
         elem.parentElement.insertBefore(newElem, elem);
 
@@ -288,7 +300,17 @@ TODO:
         return newElem;
     }
 
-    // this is sepparate from upFunc because the order matters
+    function setExpanderStyle(elem, styleOverride) {
+        if(!elem[origStyles]) {
+            elem[origStyles] = { };
+        }
+        for(const key in styleOverride) {
+            elem[origStyles][key] = elem.style[key];
+            elem.style[key]       = styleOverride[key];
+        }
+    }
+
+    // this is separate from upFunc because the order matters
     const updaters = [
         "scope", // grr should this then be "scopes"?
         "expands",
@@ -296,15 +318,17 @@ TODO:
         "controls",
     ];
 
-    const protoElem      = Symbol();
-    const generatedElems = Symbol();
-
     const upFunc = {
         scope: function(elem, data, vs) {
             // data = evaluate data[vs]; continue on elem with new data
             return [ elem, evaluate(data, vs) ];
         },
         expands: function(elem, data, vs) {
+            // - hide the element since we just want to show the clones:
+            if(!elem[origStyles]) {
+                setExpanderStyle(elem, { display: 'none' });
+            }
+
             // - delete previously generated elements
             let genEls = elem[generatedElems];
             if(genEls) {
