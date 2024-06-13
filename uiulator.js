@@ -53,10 +53,10 @@ var uiulator = function(dataSource, elements) {
 
 /*
 TODO:
-   x controls
+   ✓ controls
    - checkbox controls grrr
-   x hide the expanders
-   - expand n times if it's not a collection but is numeric?
+   ✓ hide the expanders
+   ✓ expand n times if it's not a collection but is numeric
    - kill '*' or use it.
    - fix ids in clones somehow so they don't collide
    - add default update intervals
@@ -64,21 +64,10 @@ TODO:
        https://stackoverflow.com/questions/3051114/value-of-variable-has-changed-or-not
        ^^^ but I can't find that on MDN and it really doesn't seem to exist.
        MAYBE have an option to install setters which fire off updates?
-   - option for tables:  cloning headers makes td?
-     - test tables
+   x option for tables:  cloning headers makes td?
+     ✓ test tables
    - maybe change the data-shows etc to like data-uiulator-shows
 
-   - NOTE that on branch allow-container-changes there was a more
-     sophisticated expansion (which didn't work right for subs,
-     but..) which didn't kill all the elements each time, so it's
-     both (probably) more efficient but also means that if you're
-     typing in a box to change a value you don't get cut off.  hmm.
-     brute force solution would be to pause the whole update if
-     an element which would be deleted has focus...
-     ^^ ACTUALLY don't worry;  we -can- use the code from the other
-     branch since cloning happens once per key so keys are unique
-     so just use the keys to know if/when things should actaully
-     change.
  */
 
     // these are for stashing data in expander elements:
@@ -159,6 +148,16 @@ TODO:
         }
     }
 
+    // given an integer, returns an iterable object
+    // with the values [0..integer] (inclusive)
+    function iterableInteger(integer) {
+      return function*() {
+        let index = 0;
+        while(index < integer) {
+          yield index++;
+        }
+      }();
+    }
 
     // this is separate from upFunc because the order matters
     const updaters = [
@@ -185,13 +184,18 @@ TODO:
             const oldGenEls = elem[generatedElems] ?? { };
             const newGenEls = { };
             if(data) {
+                if(Number.isInteger(data)) {
+                    var keys = iterableInteger(data);
+                } else {
+                    var keys = Object.keys(data);
+                }
 
                 // - for each key of data
                 //   - copy elem
                 //   - continue on copy of elem, passing key as vs
                 const oldExpands = elem.dataset.expands;
                 delete elem.dataset.expands;
-                for(const key in data) {
+                for(const key of keys) {
                     if(oldGenEls[key]) {
                         // reuse the old element:
                         newGenEls[key] = oldGenEls[key];
