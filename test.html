@@ -8,6 +8,12 @@
       TESTING one 2 <span data-controls="plant_type">tree</span>
     </div>
     <div>
+      <label>
+        <input type="checkbox" id="dynamic-fruitbats">
+        Allow automatic additions and deletions
+      </label>
+    </div>
+    <div>
       <div>
         At the tone, the time will be: 
         <span id="klok" data-shows="epoch"> </span>
@@ -34,8 +40,8 @@
     const plants = undefined; //  = [ ];
     const fruitbats = [
       { name: newName(), fruitsEaten: 0 },
-      { name: newName(), fruitsEaten: 0, secrets: "yes" },
-      { name: newName(), fruitsEaten: 0, secrets: { nom: "spycow" } },
+      { name: newName(), fruitsEaten: 0 },
+      { name: newName(), fruitsEaten: 0 },
     ];
 
     const time = {
@@ -170,27 +176,29 @@
       misc.update();
     }, 1000);
 
-    // after 2 seconds, add or remove a fruitbat:
+    // after 2 seconds, potentially add or remove a fruitbat:
     const addOrRemoveBats = window.setInterval(function() {
-        let add = true;
-        if(fruitbats.length > 6) {
-            add = false;
-        } else if(fruitbats.length >= 3) {
-            add = Math.random() > 0.4;
-        }
-
-        if(add) {
-            //fruitbats.push({ name: "<a href='boo'>New Guy</a>", fruitsEaten: 0 });
-            let secrets;
-            if(randInt(4) === 0) {
-                secrets = { nom: nomDeGuerre() };
+        if(document.getElementById('dynamic-fruitbats').checked) { 
+            let add = true;
+            if(fruitbats.length > 6) {
+                add = false;
+            } else if(fruitbats.length >= 3) {
+                add = Math.random() > 0.4;
             }
 
-            fruitbats.push({ name: newName(), fruitsEaten: 0, secrets: secrets });
-        } else {
-            // pick one and remove it:
-            const rn = Math.floor(Math.random() * fruitbats.length);
-            fruitbats.splice(rn, 1);
+            if(add) {
+                //fruitbats.push({ name: "<a href='boo'>New Guy</a>", fruitsEaten: 0 });
+                let secrets;
+//                if(randInt(4) === 0) {
+                    secrets = { nom: nomDeGuerre() };
+//                }
+
+                fruitbats.push({ name: newName(), fruitsEaten: 0, secrets: secrets });
+            } else {
+                // pick one and remove it:
+                const rn = Math.floor(Math.random() * fruitbats.length);
+                fruitbats.splice(rn, 1);
+            }
         }
 
     }, 2000);
