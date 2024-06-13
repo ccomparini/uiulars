@@ -121,7 +121,7 @@
         '"Gabby"', 'Stark', '"Starchild"',
       ];
       let name = "";
-      for(let partsLeft = len; partsLeft > 0; partsLeft--) {
+      for(let partsLeft = len - 1; partsLeft >= 0; partsLeft--) {
         const nameNum = randInt(nameParts);
         let np = nameParts.splice(nameNum, 1, addSuffixOrPrefix(nameParts[nameNum]))[0];
 
