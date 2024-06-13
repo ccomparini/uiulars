@@ -2,6 +2,14 @@
   <head>
     <link rel="stylesheet" href="/fbm.css" type "text/css">
     <link rel="stylesheet" href="test.css" type "text/css">
+    <style>
+      .fruitbat-display {
+        display: flex;
+        > * {
+          flex: .75;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="planter-box" data-expands="plants">
@@ -18,8 +26,8 @@
         Mode:
         <select data-controls="alterationMode">
           <option value="rand">random add/delete</option>
-          <option value="cycle">cycle forward</option>
-          <option value="cycle-back">cycle backward</option>
+          <option value="cycle-up">cycle up</option>
+          <option value="cycle-down">cycle down</option>
         </select>
       </label>
       <label>
@@ -35,11 +43,31 @@
         <span id="klok" data-shows="epoch"> </span>
       </div>
       <div class="fruitbat-display">
-        <div id="fruitbat-counter">There are <span data-shows="length"></span> fruitbats: </div>
-        <div id="fruitbat" data-expands>
-          My name is <span style="font-weight: bold" id="namespan" data-shows="name">🐄</span>,
-          and I have eaten <span id="fruitspan" data-shows="fruitsEaten">∅</span> fruits.
-          <span class="expander-as-if" data-expands="secrets">My nom de guerre is: <span is="show-secret" data-shows=""></span>.</span>
+        <div>
+          <div id="fruitbat-counter">There are <span data-shows="length"></span> fruitbats: </div>
+          <div id="fruitbat" data-expands>
+            My name is <span style="font-weight: bold" id="namespan" data-shows="name">🐄</span>,
+            and I have eaten <span id="fruitspan" data-shows="fruitsEaten">∅</span> fruits.
+            <span class="expander-as-if" data-expands="secrets">My nom de guerre is: <span is="show-secret" data-shows=""></span>.</span>
+          </div>
+        </div>
+        <div>
+          <table>
+            <tr>
+              <th>Name</th>
+              <th>Age (seconds)</th>
+              <th>Fruits eaten</th>
+              <th>Secret name</th>
+              <th>All secrets</th>
+            </tr>
+            <tr data-expands>
+              <td data-shows="name"></td>
+              <td data-shows="age"></td>
+              <td> <span data-expands="fruitsEaten">🍎</span></td>
+              <td data-shows="secrets.nom"></td>
+              <td data-expands="secrets"></td>
+            </tr>
+          </table>
         </div>
       </div>
       <hr>
@@ -53,12 +81,16 @@
   </body>
   <script src="./uiulator.js"> </script>
   <script>
-    const plants = undefined; //  = [ ];
-    const fruitbats = [
-      { name: newName(), fruitsEaten: 0 },
-      { name: newName(), fruitsEaten: 0 },
-      { name: newName(), fruitsEaten: 0 },
-    ];
+    const settings = {
+        alterationMode: 'rand',
+        minPopulation: 8,
+        maxPopulation: 20,
+    };
+
+    const plants = undefined;
+    const fruitbats = [...Array(settings.minPopulation)].map(() => {
+      return newBat();
+    });
 
     const time = {
       epoch: "timeless",
@@ -192,21 +224,23 @@
           fruitbats[Math.floor(Math.random() * fruitbats.length)].fruitsEaten++;
       }
       misc.update();
-    }, 1000);
+    }, 940);
 
     function newBat() {
-        const newBat = { name: newName(), fruitsEaten: 0 };
+        const newBat = {
+            name: newName(),
+            fruitsEaten: 0,
+            birthsecond: Math.floor(Date.now()/1000),
+            get age() {
+                return Math.floor(Date.now()/1000) - this.birthsecond;
+            },
+        };
         if(randInt(4) === 0) {
             newBat.secrets = { nom: nomDeGuerre() };
         }
         return newBat;
     }
 
-    const settings = {
-        alterationMode: 'rand',
-        minPopulation: 3,
-        maxPopulation: 7,
-    };
     uiulator(settings, document.getElementById("settings-controllers"));
     function alterBats() {
         if(document.getElementById('dynamic-fruitbats').checked) { 
@@ -214,10 +248,10 @@
                 case 'rand':
                     randomlyAddOrDelete();
                     break;
-                case 'cycle':
+                case 'cycle-up':
                     cycleBats(true);
                     break;
-                case 'cycle-back':
+                case 'cycle-down':
                     cycleBats(false);
                     break;
             }
