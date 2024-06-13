@@ -54,6 +54,7 @@ var uiulator = function(dataSource, elements) {
 /*
 TODO:
    x controls
+   - checkbox controls grrr
    x hide the expanders
    - expand n times if it's not a collection but is numeric?
    - kill '*' or use it.
@@ -83,6 +84,9 @@ TODO:
     // these are for stashing data in expander elements:
     const origStyles     = Symbol();
     const generatedElems = Symbol();
+
+    // and this is for updaters:
+    const nowShowing = Symbol();
 
     function parseVarSpec(vs) {
         if(vs === undefined)
@@ -122,8 +126,6 @@ TODO:
         elem.parentElement.insertBefore(newElem, elem);
 
 // TODO change all the sub IDs in the new element tree so they don't collide
-        updateElements(newElem, data);
-
         return newElem;
     }
 
@@ -131,11 +133,32 @@ TODO:
         if(!elem[origStyles]) {
             elem[origStyles] = { };
         }
+
         for(const key in styleOverride) {
             elem[origStyles][key] = elem.style[key];
             elem.style[key]       = styleOverride[key];
         }
     }
+
+    function onControlModified(ev) {
+        const elem = ev.target;
+        const data = elem[nowShowing];
+        const varPath = parseVarSpec(elem.dataset.shows);
+        const specificVar = varPath.pop();
+        const container = evaluate(data, varPath);
+        if(container === undefined) {
+            console.warn(
+                `Can't set ${varPath}[${specificVar}] because it's undefined`
+            );
+        } else {
+            if(typeof(elem.value) !== undefined) {
+                container[specificVar] = elem.value;
+            } else {
+                container[specificVar] = elem.innerText;
+            }
+        }
+    }
+
 
     // this is separate from upFunc because the order matters
     const updaters = [
@@ -148,7 +171,7 @@ TODO:
     const upFunc = {
         scope: function(elem, data, vs) {
             // data = evaluate data[vs]; continue on elem with new data
-            return [ elem, evaluate(data, vs) ];
+            return [ elem, evaluate(data, parseVarSpec(vs)) ];
         },
         expands: function(elem, data, vs) {
             // - hide the element since we just want to show the clones:
@@ -156,31 +179,39 @@ TODO:
                 setExpanderStyle(elem, { display: 'none' });
             }
 
-            // - delete previously generated elements
-            let genEls = elem[generatedElems];
-            if(genEls) {
-                for(const el of genEls) {
-                    el.remove();
-                }
-            }
-            genEls = [ ]; // XXX change this to associative array and only delete things which have gone.
-
             // - rescope data by vs;
-            data = evaluate(data, vs);
+            data = evaluate(data, parseVarSpec(vs));
 
-            // - for each key of data
-            //   - copy elem
-            //   - continue on copy of elem, passing key as vs
+            const oldGenEls = elem[generatedElems] ?? { };
+            const newGenEls = { };
             if(data) {
+
+                // - for each key of data
+                //   - copy elem
+                //   - continue on copy of elem, passing key as vs
                 const oldExpands = elem.dataset.expands;
                 delete elem.dataset.expands;
                 for(const key in data) {
-                    genEls.push(cloneAndExpand(elem, data, key));
+                    if(oldGenEls[key]) {
+                        // reuse the old element:
+                        newGenEls[key] = oldGenEls[key];
+                        delete oldGenEls[key];
+                    } else {
+                        // no element for this thing yet, so make one:
+                        newGenEls[key] = cloneAndExpand(elem, data, key);
+                    }
+                    updateElements(newGenEls[key], data);
+
                 }
                 elem.dataset.expands = oldExpands;
-            }
 
-            elem[generatedElems] = genEls;
+            }
+            // remove any orphaned elements (ones for which the
+            // data no longer exist) from the DOM:
+            for(const key in oldGenEls) {
+                oldGenEls[key].remove();
+            }
+            elem[generatedElems] = newGenEls;
 
             // callers should consider themselves done with this
             // part of the tree; all other updates will be done
@@ -192,7 +223,8 @@ TODO:
             // for users if they are trying to copy and paste or type
             // something in and you change it:
             if(document.activeElement !== elem) {
-                const val = evaluate(data, vs);
+                elem[nowShowing] = data;
+                const val = evaluate(data, parseVarSpec(vs));
                 if(elem.value === undefined) {
                     // normal div or span or whatever
                     elem.textContent = val;
@@ -206,19 +238,10 @@ TODO:
         controls: function(elem, data, vs) {
 
             // controllers always show what they control:
-            elem.dataset.shows = elem.dataset.controls;
+            elem.dataset.shows = vs;
 
-            const specificVar = vs.pop();
-            const specificContainer = evaluate(data, vs);
-            const upfunc = function(ev) {
-                if(typeof(elem.value) !== undefined) {
-                    specificContainer[specificVar] = elem.value;
-                } else {
-                    specificContainer[specificVar] = elem.innerText;
-                }
-            };
-            elem.addEventListener('change', upfunc);
-            elem.addEventListener('input',  upfunc);
+            elem.addEventListener('change', onControlModified);
+            elem.addEventListener('input',  onControlModified);
 
             // now that the event handlers are installed,
             // we no longer need/want this:
@@ -228,15 +251,21 @@ TODO:
         },
     }
 
+    // debugging hook so I can select specific elements to break on:
+    const breakOn = {
+        secrets: true,
+    };
+
     // updates the element passed, and all its children
     function updateElements(elem, data) {
         const ds = elem.dataset;
         if(ds) {
             for(const updater of updaters) {
                 if(ds[updater] !== undefined) {
-                    [elem, data] = upFunc[updater](
-                        elem, data, parseVarSpec(ds[updater])
-                    );
+                    if(breakOn[ds[updater]]) {
+                        console.log(`give me a break on ${updater} ${ds[updater]}`);
+                    }
+                    [elem, data] = upFunc[updater](elem, data, ds[updater]);
                 }
                 if(!elem) break;
             }

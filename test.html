@@ -5,12 +5,28 @@
   </head>
   <body>
     <div id="planter-box" data-expands="plants">
-      TESTING one 2 <span data-controls="plant_type">tree</span>
+      TESTING one 2 <span data-controls="plantType">tree</span>.  If
+      you see this div, it's unexpected because <code>plants</code>
+      should be undefined, which should mean this div doesn't "expand".
     </div>
-    <div>
+    <div id="settings-controllers">
       <label>
-        <input type="checkbox" id="dynamic-fruitbats">
-        Allow automatic additions and deletions
+        <input type="checkbox" id="dynamic-fruitbats" checked>
+        Allow automatic additions and deletions.
+      </label>
+      <label>
+        Mode:
+        <select data-controls="alterationMode">
+          <option value="rand">random add/delete</option>
+          <option value="cycle">cycle forward</option>
+          <option value="cycle-back">cycle backward</option>
+        </select>
+      </label>
+      <label>
+        Min population: <input type="number" min="0" max="20" data-controls="minPopulation"></input>
+      </label>
+      <label>
+        Max population: <input type="number" min="0" max="20" data-controls="maxPopulation"></input>
       </label>
     </div>
     <div>
@@ -102,7 +118,7 @@
         'Luxuryyacht', 'Timewarp', 'Becket', 'Chipperson', 'Higgly',
         'Freckle', 'Jennifer', 'Courtney', 'Samuel', '"the Octopus"',
         'Fred', 'Henrique', 'Puggle', 'Smuggly', '"Smooth Operator"',
-        '"Gabby"',
+        '"Gabby"', 'Stark', '"Starchild"',
       ];
       let name = "";
       for(let partsLeft = len; partsLeft > 0; partsLeft--) {
@@ -172,36 +188,76 @@
 
     const misc = uiulator(fruitbats, document.querySelectorAll(".fruitbat-display"));
     window.setInterval(function() {
-      fruitbats[Math.floor(Math.random() * fruitbats.length)].fruitsEaten++;
+      if(fruitbats.length) {
+          fruitbats[Math.floor(Math.random() * fruitbats.length)].fruitsEaten++;
+      }
       misc.update();
     }, 1000);
 
-    // after 2 seconds, potentially add or remove a fruitbat:
-    const addOrRemoveBats = window.setInterval(function() {
+    function newBat() {
+        const newBat = { name: newName(), fruitsEaten: 0 };
+        if(randInt(4) === 0) {
+            newBat.secrets = { nom: nomDeGuerre() };
+        }
+        return newBat;
+    }
+
+    const settings = {
+        alterationMode: 'rand',
+        minPopulation: 3,
+        maxPopulation: 7,
+    };
+    uiulator(settings, document.getElementById("settings-controllers"));
+    function alterBats() {
         if(document.getElementById('dynamic-fruitbats').checked) { 
-            let add = true;
-            if(fruitbats.length > 6) {
-                add = false;
-            } else if(fruitbats.length >= 3) {
-                add = Math.random() > 0.4;
-            }
-
-            if(add) {
-                //fruitbats.push({ name: "<a href='boo'>New Guy</a>", fruitsEaten: 0 });
-                let secrets;
-//                if(randInt(4) === 0) {
-                    secrets = { nom: nomDeGuerre() };
-//                }
-
-                fruitbats.push({ name: newName(), fruitsEaten: 0, secrets: secrets });
-            } else {
-                // pick one and remove it:
-                const rn = Math.floor(Math.random() * fruitbats.length);
-                fruitbats.splice(rn, 1);
+            switch(settings.alterationMode) {
+                case 'rand':
+                    randomlyAddOrDelete();
+                    break;
+                case 'cycle':
+                    cycleBats(true);
+                    break;
+                case 'cycle-back':
+                    cycleBats(false);
+                    break;
             }
         }
+    }
 
-    }, 2000);
+    function cycleBats(forward) {
+        if(fruitbats.length < settings.maxPopulation) {
+            if(forward) fruitbats.push   (newBat());
+            else        fruitbats.unshift(newBat());
+        }
+        if(fruitbats.length > settings.minPopulation) {
+            if(forward) fruitbats.shift();
+            else        fruitbats.pop();
+        }
+    }
+
+    function randomlyAddOrDelete() {
+        let add = true;
+        if(fruitbats.length >= settings.maxPopulation) {
+            add = false;
+        } else if(fruitbats.length < settings.minPopulation) {
+            add = true;
+        } else {
+            add = Math.random() > 0.4;
+        }
+
+        if(add) {
+            //fruitbats.push({ name: "<a href='boo'>New Guy</a>", fruitsEaten: 0 });
+            fruitbats.push(newBat());
+
+        } else {
+            // pick one and remove it:
+            const rn = Math.floor(Math.random() * fruitbats.length);
+            fruitbats.splice(rn, 1);
+        }
+    }
+
+    // every 2 seconds, potentially add or remove fruitbats or whatever:
+    window.setInterval(alterBats, 2000);
 
   </script>
 </html>
