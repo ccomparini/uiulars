@@ -96,11 +96,11 @@
       epoch: "timeless",
     };
 
-    function randInt(maxOrFrom) {
-      if(typeof maxOrFrom.length !== "undefined")
-          maxOrFrom = maxOrFrom.length;
+    function randInt(maxPlusOneOrFrom) {
+      if(maxPlusOneOrFrom.length !== undefined)
+          maxPlusOneOrFrom = maxPlusOneOrFrom.length;
 
-      return Math.floor(Math.random() * maxOrFrom);
+      return Math.floor(Math.random() * maxPlusOneOrFrom);
     }
 
     function randItem(from) {
@@ -117,7 +117,7 @@
       const suffixes = [
         'son', 'dotter', 'owitz', 'berger', 'potty', 'ular', 'othy',
         ' the elder', ' the younger', 'ski', 'ovitch', 'ly',
-        ' the unspeakably horrible', 
+        ' the Dreadfully Loathsome', 'stein',
       ];
 
       // it's getting a suffix or prefix, so remove all quotes:
@@ -130,6 +130,12 @@
           if(name.slice(0, 4) === 'the ') {
             // so we'll want to remove the "the"
             name = name.slice(4);
+          }
+        } else if(prefix[0] === ',') {
+          if(name[0] === ',') {
+            // Change (eg) "Foo, daughter of, son of Bar" to
+            //             "Foo, daughter of son of Bar"
+            name = name.slice(1);
           }
         }
         return `${randItem(prefixes)}${name}`
@@ -150,7 +156,7 @@
         'Luxuryyacht', 'Timewarp', 'Becket', 'Chipperson', 'Higgly',
         'Freckle', 'Jennifer', 'Courtney', 'Samuel', '"the Octopus"',
         'Fred', 'Henrique', 'Puggle', 'Smuggly', '"Smooth Operator"',
-        '"Gabby"', 'Stark', '"Starchild"',
+        '"Gabby"', 'Stark', '"Starchild"', 'Muon'
       ];
       let name = "";
       for(let partsLeft = len - 1; partsLeft >= 0; partsLeft--) {
@@ -173,13 +179,21 @@
           }
         }
 
+        // .. stuff like:
+        //    "the Octopus", daughter of Smoo
+        // needs to be changed to:
+        //    the Octopus, daughter of Smoo
+        if(np[0] === ',') {
+          // .. in fact, in this case let's kill all
+          // existing quotes and commas:
+          name = name.replace(/[",]/g, '');
+        }
+
         if(np.slice(0, 4) === 'the ') {
           if(name.length === 0) {
-            // if the name starts with "the", either
-            // capitalize it or remove the "the"
-            np = np.slice(4); // (remove it, then maybe add 'The')
+            // if the name starts with "the", possibly remove it:
             if(randInt(2)) {
-              np = `The ${np}`;
+              np = np.slice(4);
             }
           } else if(partsLeft) {
             // we're somewhere in the middle of the
@@ -188,17 +202,6 @@
           }
         }
 
-        // .. stuff like:
-        //    "the Octopus", daughter of Smoo
-        // needs to be change to:
-        //    the Octopus, daughter of Smoo
-        if(np[0] === ',') {
-          // .. in fact, in this case let's kill all existing
-          // quotes and commas:
-          name = name.replace(/[",]/g, '');
-        }
-
-
         if(name.length === 0) {
           name = np;
         } else {
@@ -206,6 +209,9 @@
             name += ' ';
           name += np;
         }
+
+        // finally, if necessary, capitalize the first letter:
+        name = name.replace(/^"?[a-z]/, (ch) => { return ch.toUpperCase() });
       }
       return name;
     }
