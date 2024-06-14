@@ -31,10 +31,10 @@
         </select>
       </label>
       <label>
-        Min population: <input type="number" min="0" max="20" data-controls="minPopulation"></input>
+        Min population: <input type="number" min="0" max="30" data-controls="minPopulation"></input>
       </label>
       <label>
-        Max population: <input type="number" min="0" max="20" data-controls="maxPopulation"></input>
+        Max population: <input type="number" min="0" max="50" data-controls="maxPopulation"></input>
       </label>
     </div>
     <div>
@@ -58,14 +58,12 @@
               <th>Age (seconds)</th>
               <th>Fruits eaten</th>
               <th>Secret name</th>
-              <th>All secrets</th>
             </tr>
             <tr data-expands>
               <td data-shows="name"></td>
               <td data-shows="age"></td>
               <td> <span data-expands="fruitsEaten">🍎</span></td>
               <td data-shows="secrets.nom"></td>
-              <td data-expands="secrets"></td>
             </tr>
           </table>
         </div>
@@ -83,8 +81,8 @@
   <script>
     const settings = {
         alterationMode: 'rand',
-        minPopulation: 8,
-        maxPopulation: 20,
+        minPopulation: 16,
+        maxPopulation: 24,
     };
 
     const plants = undefined;
@@ -112,18 +110,35 @@
        return nom;
     }
 
+    function addTitle(name) {
+      const titles = [
+        'Sir', 'Chairman', 'Colonel', 'Associate Professor',
+        'Corporal', 'General', 'Ms.', 'Dame', 'His Lordship',
+        'The Honorable', 'Lady', 'Admiral', 'Dr.', 'Major',
+      ];
+      return `${randItem(titles)} ${name}`
+      
+    }
+
     function addSuffixOrPrefix(name) {
-      const prefixes = [ ', child of ', ', daughter of ', ', son of ', 'Mac' ];
+      const prefixes = [
+        ', child of ', ', daughter of ', ', son of ', 'Mac',
+        'von ', ', the Lord ', ', the Lady ',
+      ];
       const suffixes = [
         'son', 'dotter', 'owitz', 'berger', 'potty', 'ular', 'othy',
-        ' the elder', ' the younger', 'ski', 'ovitch', 'ly',
-        ' the Dreadfully Loathsome', 'stein',
+        ' the Elder', ' the Younger', 'ski', 'ovitch', 'ly',
+        ' the Dreadfully Loathsome', 'stein', 'aroni', ' the Strange',
+        ' the Ancient', ' the Hippy', 'pie', 'berry', ' the Almighty', 
+        ' the Unlovable', ', PhD', ', Esq.', 'child',
       ];
 
       // it's getting a suffix or prefix, so remove all quotes:
       name = name.replace(/"/g, '');
 
-      if(randInt(2)) {
+      if(Math.random() < 0.5) {
+        return `${name}${randItem(suffixes)}`
+      } else {
         const prefix = randItem(prefixes);
         if(prefix[prefix.length - 1] !== ' ') {
           // no space at the end of the prefix.... 
@@ -139,8 +154,6 @@
           }
         }
         return `${randItem(prefixes)}${name}`
-      } else {
-        return `${name}${randItem(suffixes)}`
       }
     }
 
@@ -148,15 +161,16 @@
       len = len ?? Math.floor(Math.sqrt(Math.random() * 8) + 1);
 
       const nameParts = [
-        '"Blackheart"', 'Smooberry', 'Burger', '"Hyperspace"', 'Nevil',
+        '"Blackheart"', 'Smee', 'Burger', '"Hyperspace"', 'Nevil',
         'Schmed', 'McSpangberger', 'Appocalypse', 'Chevins', 'Young',
         'Space', '"Smiley"', 'Bozon', 'Strawberry', 'Margaret',
         'Moonpie',  'Homeontherange', 'Alfred', 'Theosophe', 'Alastair',
-        'the Almighty', '"Chippers"', 'Ruthless', '"the Body"',
-        'Luxuryyacht', 'Timewarp', 'Becket', 'Chipperson', 'Higgly',
+        '"Chippers"', 'Ruthless', '"Brains"', 'Smith',
+        'Luxuryyacht', 'Timewarp', 'Becket', 'Chipper', 'Higgly',
         'Freckle', 'Jennifer', 'Courtney', 'Samuel', '"the Octopus"',
         'Fred', 'Henrique', 'Puggle', 'Smuggly', '"Smooth Operator"',
-        '"Gabby"', 'Stark', '"Starchild"', 'Muon'
+        '"Gabby"', 'Stark', '"Starchild"', 'Muon', 'Sméagol', 'Bear',
+        'Ursa', 'Prudence', 'Minor', 'Nigel'
       ];
       let name = "";
       for(let partsLeft = len - 1; partsLeft >= 0; partsLeft--) {
@@ -173,7 +187,7 @@
             // .. last name may be treated differently:
             if(np[0] === '"') {
               np = `(AKA ${np})`;
-            } else if(randInt(5)) {
+            } else if(Math.random() < .33*len) {
               np = addSuffixOrPrefix(np);
             }
           }
@@ -209,10 +223,16 @@
             name += ' ';
           name += np;
         }
-
-        // finally, if necessary, capitalize the first letter:
-        name = name.replace(/^"?[a-z]/, (ch) => { return ch.toUpperCase() });
       }
+
+      //if(Math.random() < 0.125) {
+      if(Math.random() < 1/6) {
+        name = addTitle(name);
+      }
+
+      // finally, if necessary, capitalize the first letter:
+      name = name.replace(/^"?[a-z]/, (ch) => { return ch.toUpperCase() });
+
       return name;
     }
 
@@ -230,7 +250,7 @@
           fruitbats[Math.floor(Math.random() * fruitbats.length)].fruitsEaten++;
       }
       misc.update();
-    }, 940);
+    }, 763);
 
     function newBat() {
         const newBat = {
@@ -279,7 +299,7 @@
         let add = true;
         if(fruitbats.length >= settings.maxPopulation) {
             add = false;
-        } else if(fruitbats.length < settings.minPopulation) {
+        } else if(fruitbats.length <= settings.minPopulation) {
             add = true;
         } else {
             // random, but give a slight bias toward adding
