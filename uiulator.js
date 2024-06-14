@@ -57,8 +57,7 @@ TODO:
    - checkbox controls grrr
    ✓ hide the expanders
    ✓ expand n times if it's not a collection but is numeric
-   - kill '*' or use it.
-   - fix ids in clones somehow so they don't collide
+   - fix ids in clones somehow so they don't collide  <--- for realz you need to do this
    - add default update intervals
      - OR see if we can use Object.watch??
        https://stackoverflow.com/questions/3051114/value-of-variable-has-changed-or-not
@@ -81,8 +80,7 @@ TODO:
         if(vs === undefined)
             return [ ];
 
-// XXX consider the '*' - in or out?
-        vs = vs.replace(/[^A-Za-z_0-9*.]/g, "");
+        vs = vs.replace(/[^A-Za-z_0-9.]/g, "");
         if(!vs.length)
             return [ ];
 
@@ -257,7 +255,7 @@ TODO:
 
     // debugging hook so I can select specific elements to break on:
     const breakOn = {
-        secrets: true,
+        //secrets: true,
     };
 
     // updates the element passed, and all its children
