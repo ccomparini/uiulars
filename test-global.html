@@ -1,0 +1,86 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="/fbm.css" type "text/css">
+    <link rel="stylesheet" href="test.css" type "text/css">
+    <style>
+      .integers {
+        margin: 4px;
+        border: solid #2f2f2f;
+      }
+      .databox {
+        margin: 8px;
+      }
+      .deepspan {
+        display: inline-block;
+        transform: scale(1, -1);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="databox">
+      <div>
+        TESTING one 2 <span data-shows="plant_type">tree</span>
+      </div>
+      <select data-controls="plant_type">
+        <option value="tree">tree</option>
+        <option value="タンポポ">タンポポ</option>
+        <option value="elm">elm</option>
+        <option value="grass">grass</option>
+      </select>
+    </div>
+    <div class="databox" data-scope="someData">
+      <span class="integers" id="rando" data-expands="randomInts" data-shows></span>
+      <div>
+        <span class="integers" id="rando" data-expands="repeatCount">🫠</span>
+      </div>
+      <div class="databox" data-scope="nested">
+        <span data-shows="bird"></span>
+      </div>
+      <select data-controls="currentInput">
+        <option value="🐈">cat</option>
+        <option value="😾">angry cat (aka "Bear")</option>
+        <option value="💩">poop</option>
+        <option value="🐄">cow</option>
+        <option value="💀">skull</option>
+        <option value="👻">ghost</option>
+      </select>
+      <button onclick="someData.misc.push(someData.currentInput)">add to misc</button>
+      <button onclick="someData.deep.deeper.push(someData.currentInput)">add deeper</button>
+      <div class="databox" data-scope="misc">
+        <span id="mexpanding" data-expands data-shows></span>
+      </div>
+      <div class="databox" data-scope="deep">
+        <div data-expands="deeper"><span data-shows class="deepspan"></span></div>
+      </div>
+    </div>
+  </body>
+  <script src="./uiulator.js"> </script>
+  <script>
+    plant_type = "tree";
+
+    someData = {
+        currentInput: "💀",
+        randomInts: [ ],
+        repeatCount: 23,
+        nested: {
+            bird: "eagle",
+        },
+        misc: [ ],
+        deep: {
+          deeper: [ ],
+        }
+    };
+    for(let foo = 23; foo >= 0; foo--) {
+        someData.randomInts.push(Math.floor(Math.random() * 8));
+    }
+
+// XXX try passing nothing;  also add options for update intervals
+// so we don't have to setInterval
+    const uil = uiulator(globalThis);
+    window.setInterval(function() {
+        uil.update();
+    }, 250);
+  </script>
+</html>
+
+
