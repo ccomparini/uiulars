@@ -282,13 +282,13 @@
         } else if(fruitbats.length < settings.minPopulation) {
             add = true;
         } else {
+            // random, but give a slight bias toward adding
             add = Math.random() > 0.4;
         }
 
         if(add) {
-            //fruitbats.push({ name: "<a href='boo'>New Guy</a>", fruitsEaten: 0 });
-            fruitbats.push(newBat());
-
+            const rn = Math.floor(Math.random() * fruitbats.length + 1);
+            fruitbats.splice(rn, 0, newBat());
         } else {
             // pick one and remove it:
             const rn = Math.floor(Math.random() * fruitbats.length);
