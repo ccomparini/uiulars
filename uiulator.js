@@ -57,7 +57,7 @@ TODO:
    - checkbox controls grrr
    ✓ hide the expanders
    ✓ expand n times if it's not a collection but is numeric
-   - fix ids in clones somehow so they don't collide  <--- for realz you need to do this
+   ✓ fix ids in clones somehow so they don't collide
    - add default update intervals
      - OR see if we can use Object.watch??
        https://stackoverflow.com/questions/3051114/value-of-variable-has-changed-or-not
@@ -100,8 +100,20 @@ TODO:
         return data;
     }
 
+    function fixIds(clone, key) {
+        // change the id of the clone, or else it inherits
+        // the id and we get duplicate ids:
+        if(clone.id !== "")
+            clone.id = clone.id + "-" + key;
+
+        for(const kid of clone.childNodes) {
+            fixIds(kid, key);
+        }
+    }
+
     function cloneAndExpand(elem, data, vs) {
         let newElem = elem.cloneNode(true);
+        fixIds(newElem, vs);
 
         for(const stel in elem[origStyles]) {
             newElem.style[stel] = elem[origStyles][stel];
@@ -112,7 +124,6 @@ TODO:
         newElem.dataset.scope = vs;
         elem.parentElement.insertBefore(newElem, elem);
 
-// TODO change all the sub IDs in the new element tree so they don't collide
         return newElem;
     }
 
