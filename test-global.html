@@ -14,6 +14,14 @@
         display: inline-block;
         transform: scale(1, -1);
       }
+      .nested {
+        font-weight: bold;
+        font-style: italic;
+        font-size: larger;
+      }
+      .integer-editor {
+        opacity: 0.5
+      }
     </style>
   </head>
   <body>
@@ -29,13 +37,15 @@
       </select>
     </div>
     <div class="databox" data-scope="someData">
-      <span class="integers" id="rando" data-expands="randomInts" data-shows></span>
+      Random ints, just for you: <span class="integers" id="rando" data-expands="randomInts" data-shows></span>
       <div>
-        <span class="integers" id="rando" data-expands="repeatCount">🫠</span>
+        Next we have <span class="integer-editor" data-controls="repeatCount" contentEditable></span> melting faces:
+        <span id="melties" data-expands="repeatCount">🫠</span>
       </div>
       <div class="databox" data-scope="nested">
-        <span data-shows="bird"></span>
+        In the nested scope, we have <span class="nested" data-shows="bird"></span>.
       </div>
+      Add a 
       <select data-controls="currentInput">
         <option value="🐈">cat</option>
         <option value="😾">angry cat (aka "Bear")</option>
@@ -44,8 +54,8 @@
         <option value="💀">skull</option>
         <option value="👻">ghost</option>
       </select>
-      <button onclick="someData.misc.push(someData.currentInput)">add to misc</button>
-      <button onclick="someData.deep.deeper.push(someData.currentInput)">add deeper</button>
+      <button onclick="someData.misc.push(someData.currentInput)">to misc</button> or
+      <button onclick="someData.deep.deeper.push(someData.currentInput)">to a deeper structure</button>
       <div class="databox" data-scope="misc">
         <span id="mexpanding" data-expands data-shows></span>
       </div>
@@ -61,9 +71,24 @@
     someData = {
         currentInput: "💀",
         randomInts: [ ],
-        repeatCount: 23,
+        _repeatCount: 23,
+        set repeatCount(val) {
+          val = Number.parseInt(val);
+          if(!Number.isNaN(val)) {
+            if(val < 1000) {
+              this._repeatCount = val;
+            } else {
+              // ..because otherwise you can put in very large numbers
+              // and destroy the page:
+              this._repeatCount = 1000;
+            }
+          }
+        },
+        get repeatCount() {
+          return this._repeatCount;
+        },
         nested: {
-            bird: "eagle",
+            bird: "the eagle",
         },
         misc: [ ],
         deep: {
