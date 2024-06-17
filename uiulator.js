@@ -25,184 +25,15 @@
 /**
    uiulator(dataSource, elements) - 
  */
-var uiulator = function(dataSource, elements) {
+var uiulator = function(dataSource, elements, options) {
 
-    var showers = [ ];
+    options ||= { };
 
-    function evaluateMember(containingObject, variable) {
-        let val;
-        if(typeof containingObject !== 'undefined') {
-            val = containingObject[variable];
-            if (typeof val === "function") {
-                val = val.apply(containingObject);
-                // handle promises by making every result a promise
-                // which ...  can it call update?
-                //Promise.resolve(val).then(function(value) { });
-            }
-        }
-        return val;
-    }
-
-    // expands elements with "data-expand", creating one copy of the
-    // element for each item in the group specified, and with data-scope
-    // set to the corresponding item in the group.
-    function expandElements(protoElement, scope) {
-        let elems = _expand(protoElement, scope);
-        elems.forEach(function(el) { bindDisplay(el, scope); });
-    }
-
-    function _expand(protoElement, scope) {
-        let dataset = protoElement.dataset || { };
-        let expand = dataset.expand;
-        let newElements = [ ];
-
-        scope = rescope(protoElement, scope);
-
-        if(typeof(expand) !== 'undefined') {
-            // We've got a "data-expand=x", which means we want to
-            // make a new element for each thing in collection x
-            let parsedFrom = parseDisplayDef(protoElement, expand, scope);
-
-            // at this point, we are going to expand this thing, and we
-            // don't want its clones inheriting "expand" (which could
-            // lead to infinite expansion), so kill the data-expand:
-            delete protoElement.dataset.expand;
-
-            // for each thing in the containingObject[variable],
-            // we need to make a copy of the prototype html element
-            // to represent that thing:
-            let objs = parsedFrom.containingObject;
-            if(parsedFrom.variable)
-                objs = evaluateMember(objs, parsedFrom.variable);
-
-            for (const key in objs) {
-                
-                let newElem = protoElement.cloneNode(true);
-                newElements.push(newElem);
-
-                // change the id of the clone, or else it inherits
-                // the id and we get duplicate ids:
-                if(newElem.id !== "")
-                    newElem.id = newElem.id + "-" + key;
-
-                // if a particular scope has been given for the
-                // data-expand, use it:
-                if(expand)
-                    newElem.dataset.scope = expand + "." + key;
-                else
-                    newElem.dataset.scope = key;
-
-                protoElement.parentElement.insertBefore(newElem, protoElement);
-            }
-
-            // finally, hide the element which we expanded (since it's
-            // the prototype and doesn't make sense to keep showing)
-            protoElement.style.display = 'none';
-        }
-
-        let kids = protoElement.children;
-        if(!kids) return;
-        for (let kid = kids[0]; !!kid ; kid = kid.nextSibling) {
-            _expand(kid, scope);
-        }
-
-        return newElements;
-    }
-
-    // Note:  elem is basically jammed back into the result
-    // (and not really used here) because doing so is convenient
-    // for callers.
-    function parseDisplayDef(elem, variable, scope) {
-        variable.replace(/[^A-Za-z_0-9.]/g, "");
-        let parts = variable.split(".");
-
-        let obj = scope;
-
-        for(let pi = 0; pi < parts.length - 1; pi++) {
-            if(!obj) {
-                console.log("no such variable '" + parts[pi] + "' in '" + variable + "'");
-                break;
-            }
-            obj = obj[parts[pi]];
-        }
-
-
-        return {
-            element: elem,
-            containingObject: obj,
-            variable: parts[parts.length - 1],
-        };
-    }
-
-    function rescope(elem, existingScope) {
-        if(elem.dataset && (typeof(elem.dataset.scope) !== "undefined")) {
-            let ns = parseDisplayDef(elem, elem.dataset.scope, existingScope);
-            return ns.containingObject[ns.variable];
-        } else {
-            return existingScope;
-        }
-    }
-
-    function bindDisplay(display, scope) {
-        if(!display.dataset) return;
-
-        scope = rescope(display, scope);
-
-        // ok let's say display elements have:
-        //  - (optionally) the element which sets the thing
-        //    in which case, in here, we set onChange or whatever
-        //    so like <blah data-controls="debug">. if set, this
-        //    would normally also be what it shows.
-        //  - (optionally) the element on which to display the thing
-        //    so like <blah data-shows="player.score">
-        let shows = display.dataset.shows || display.dataset.controls;
-        let ctrl  = display.dataset.controls;
-        if(shows) {
-            showers.push(parseDisplayDef(display, shows, scope));
-            delete display.dataset.shows; // so we don't bind it again
-        }
-
-        if(ctrl) {
-            let def = parseDisplayDef(display, ctrl, scope);
-            showers.push(def);
-            let el = def.element;
-            el.contenteditable = true; // doesn't seem to work; have to set in html?
-            el.addEventListener('change', function(ev) { updateControl(def) });
-            el.addEventListener('input',  function(ev) { updateControl(def) });
-            delete display.dataset.controls;
-        }
-
-        // controllers can be compound. i.e. we may
-        // pass in an outer element with inner elements
-        // displaying various things.  So recurse sub
-        // elements.
-        let kids = display.children;
-        for (let ci = 0; ci < kids.length; ci++) {
-            bindDisplay(kids[ci], scope);
-        }
-    }
-
-    function updateControl(def) {
-        let el = def.element;
-        if(typeof(el.value) !== undefined) {
-            def.containingObject[def.variable] = el.value;
-        } else {
-            def.containingObject[def.variable] = el.innerText;
-        }
-    }
-
-    /**
-      Call this periodically to update displays.
-     */
-    function updateDisplays() {
-        for (let di = showers.length - 1; di >= 0; di--) {
-            let shower = showers[di];
-            let val = evaluateMember(shower.containingObject, shower.variable);
-            if(document.activeElement !== shower.element) {
-                shower.element.textContent = val;
-                shower.element.value = val; // for inputs
-            }
-        }
+    // if no elements were specified, do them all!  This is typically
+    // a one-off, so I'm not too worried about performance.  If callers
+    // are concerned, then can narrow the scope themselves.
+    if(typeof elements === "undefined") {
+        elements = [ document ];
     }
 
     // support single elements as well as array:
@@ -222,17 +53,283 @@ var uiulator = function(dataSource, elements) {
         }
     }
 
-    // here's where we apply data to the target stuffles:
-    elements.forEach(function(el) { expandElements(el, dataSource); });
-    elements.forEach(function(el) { bindDisplay   (el, dataSource); });
+/*
+TODO:
+   ✓ controls
+   - checkbox controls grrr
+   ✓ hide the expanders
+   ✓ expand n times if it's not a collection but is numeric
+   ✓ fix ids in clones somehow so they don't collide
+   - add default update intervals
+     - AND/OR use this to capture changes:
+         https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+       ^^but I think only optionally, because (I suspect) this modifies the
+       objects.
+   x option for tables:  cloning headers makes td?
+     ✓ test tables
+   - maybe change the data-shows etc to like data-uiulator-shows
+     ^^^^^^ or, better, add an option so the user can set the commands.
+ */
+
+    // these are for stashing data in expander elements:
+    const origStyles     = Symbol();
+    const generatedElems = Symbol();
+
+    // and this is for updaters (or anything else
+    // which wants access more directly to the thing
+    // being shown)
+    const nowShowing = Symbol();
+
+    function parseVarSpec(vs) {
+        if(vs === undefined)
+            return [ ];
+
+        vs = vs.replace(/[^A-Za-z_0-9.]/g, "");
+        if(!vs.length)
+            return [ ];
+
+        return vs.split(".");
+    }
+
+    function evaluate(data, vs) {
+        if(data === undefined || vs === undefined)
+            return data;
+
+        for(const varr of vs) {
+            if(data[varr] == undefined)
+                return undefined;
+
+            data = data[varr];
+        }
+        return data;
+    }
+
+    function fixIds(clone, key) {
+        // change the id of the clone, or else it inherits
+        // the id and we get duplicate ids:
+        if(clone.id !== "")
+            clone.id = clone.id + "-" + key;
+
+        for(const kid of clone.childNodes) {
+            fixIds(kid, key);
+        }
+    }
+
+    function cloneAndExpand(elem, data, vs) {
+        let newElem = elem.cloneNode(true);
+        fixIds(newElem, vs);
+
+        for(const stel in elem[origStyles]) {
+            newElem.style[stel] = elem[origStyles][stel];
+        }
+
+        // OK so here's how we'll do it: the new element gets
+        // scoped according to the vs passed:
+        newElem.dataset.scope = vs;
+        elem.parentElement.insertBefore(newElem, elem);
+
+        return newElem;
+    }
+
+    function setExpanderStyle(elem, styleOverride) {
+        if(!elem[origStyles]) {
+            elem[origStyles] = { };
+        }
+
+        for(const key in styleOverride) {
+            elem[origStyles][key] = elem.style[key];
+            elem.style[key]       = styleOverride[key];
+        }
+    }
+
+    function onControlModified(ev) {
+        const elem = ev.target;
+        const data = elem[nowShowing];
+        const varPath = parseVarSpec(elem.dataset.shows);
+        const specificVar = varPath.pop();
+        const container = evaluate(data, varPath);
+        if(container === undefined) {
+            console.warn(
+                `Can't set ${varPath}[${specificVar}] because it's undefined`
+            );
+        } else {
+            if(elem.value !== undefined) {
+                container[specificVar] = elem.value;
+            } else {
+                container[specificVar] = elem.innerText;
+            }
+        }
+
+        if(options['update-on-change']) {
+            updateDisplays();
+        }
+
+        if(options['oncontrolchanged']) {
+            options['oncontrolchanged'](ev, elem, container, specificVar);
+        }
+    }
+
+    // given an integer, returns an iterable object
+    // with the values [0..integer] (inclusive)
+    function iterableInteger(integer) {
+      return function*() {
+        let index = 0;
+        while(index < integer) {
+          yield index++;
+        }
+      }();
+    }
+
+    // this is separate from upFunc because the order matters
+    const updaters = [
+        "scope", // grr should this then be "scopes"?
+        "expands",
+        "controls",
+        "shows",
+    ];
+
+    const upFunc = {
+        scope: function(elem, data, vs) {
+            // data = evaluate data[vs]; continue on elem with new data
+            return [ elem, evaluate(data, parseVarSpec(vs)) ];
+        },
+        expands: function(elem, data, vs) {
+            // - hide the element since we just want to show the clones:
+            if(!elem[origStyles]) {
+                setExpanderStyle(elem, { display: 'none' });
+            }
+
+            // - rescope data by vs;
+            data = evaluate(data, parseVarSpec(vs));
+
+            const oldGenEls = elem[generatedElems] ?? { };
+            const newGenEls = { };
+            if(data) {
+                if(Number.isInteger(data)) {
+                    var keys = iterableInteger(data);
+                } else {
+                    var keys = Object.keys(data);
+                }
+
+                // - for each key of data
+                //   - copy elem
+                //   - continue on copy of elem, passing key as vs
+                const oldExpands = elem.dataset.expands;
+                delete elem.dataset.expands;
+                for(const key of keys) {
+                    if(oldGenEls[key]) {
+                        // reuse the old element:
+                        newGenEls[key] = oldGenEls[key];
+                        delete oldGenEls[key];
+                    } else {
+                        // no element for this thing yet, so make one:
+                        newGenEls[key] = cloneAndExpand(elem, data, key);
+                    }
+                    updateElements(newGenEls[key], data);
+
+                }
+                elem.dataset.expands = oldExpands;
+
+            }
+            // remove any orphaned elements (ones for which the
+            // data no longer exist) from the DOM:
+            for(const key in oldGenEls) {
+                oldGenEls[key].remove();
+            }
+            elem[generatedElems] = newGenEls;
+
+            // callers should consider themselves done with this
+            // part of the tree; all other updates will be done
+            // on the clones.
+            return [ undefined, undefined ];
+        },
+        shows: function(elem, data, vs) {
+            // don't change the active element - it's very annoying
+            // for users if they are trying to copy and paste or type
+            // something in and you change it:
+            if(document.activeElement !== elem) {
+                elem[nowShowing] = data;
+                const val = evaluate(data, parseVarSpec(vs));
+                if(elem.value === undefined) {
+                    // normal div or span or whatever
+                    elem.textContent = val;
+                } else {
+                    elem.value = val; // inputs, dropdowns etc
+                }
+            }
+            
+            return [ elem, data ];
+        },
+        controls: function(elem, data, vs) {
+
+            // controllers always show what they control:
+            elem.dataset.shows = vs;
+
+            // 2 possible modes:
+            //   - 'control-on-submit' means controls only modify
+            //     the data when there's a "change" event (i.e. when
+            //     the user hit "return" or exeited the input or whatever)
+            //   - the default old-style where the event was fired on
+            //     any input
+            if(options['control-on-submit']) {
+                elem.addEventListener('change', onControlModified);
+            } else {
+                elem.addEventListener('input',  onControlModified);
+            }
+
+            // now that the event handlers are installed,
+            // we no longer need/want this:
+            delete elem.dataset.controls;
+
+            return [ elem, data ];
+        },
+    }
+
+    // debugging hook so I can select specific elements to break on:
+    const breakOn = {
+        //secrets: true,
+    };
+
+    // updates the element passed, and all its children
+    function updateElements(elem, data) {
+        const ds = elem.dataset;
+        if(ds) {
+            for(const updater of updaters) {
+                if(ds[updater] !== undefined) {
+                    if(breakOn[ds[updater]]) {
+                        console.log(`give me a break on ${updater} ${ds[updater]}`);
+                    }
+                    [elem, data] = upFunc[updater](elem, data, ds[updater]);
+                }
+                if(!elem) break;
+            }
+        }
+
+        if(elem) {
+            for(const kid of elem.childNodes) {
+                updateElements(kid, data);
+            }
+        }
+    }
+
+    function updateDisplays() {
+        for(const elem of elements) {
+            updateElements(elem, dataSource);
+        }
+    }
+
     updateDisplays();
 
+    if(options['poll-interval'] !== undefined) {
+        window.setInterval(updateDisplays, options['poll-interval']);
+    }
+
     return {
-        version: 0.1,
+        version: 0.2,
         /**
            update() - call this to sync the data to the display
          */
-        update: function() { updateDisplays() }
+        update: updateDisplays,
     };
 
 };

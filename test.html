@@ -1,66 +1,336 @@
 <html>
   <head>
-    <link rel="stylesheet" href="test.css" type "text/css">
+    <link rel="stylesheet" href="/fbm.css">
+    <link rel="stylesheet" href="test.css">
+    <style>
+      .fruitbat-display {
+        display: flex;
+        > * {
+          flex: .75;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div>
-      TESTING one 2 tree
+    <div id="planter-box" data-expands="plants">
+      TESTING one 2 <span data-controls="plantType">tree</span>.  If
+      you see this div, it's unexpected because <code>plants</code>
+      should be undefined, which should mean this div doesn't "expand".
+    </div>
+    <div id="settings-controllers">
+      <label>
+        <input type="checkbox" id="dynamic-fruitbats" checked>
+        Allow automatic additions and deletions.
+      </label>
+      <label>
+        Mode:
+        <select data-controls="alterationMode">
+          <option value="rand">random add/delete</option>
+          <option value="cycle-up">cycle up</option>
+          <option value="cycle-down">cycle down</option>
+        </select>
+      </label>
+      <label>
+        Min population: <input type="number" min="0" max="30" data-controls="minPopulation"></input>
+      </label>
+      <label>
+        Max population: <input type="number" min="0" max="50" data-controls="maxPopulation"></input>
+      </label>
+      <div><span data-shows="changeEvents.length"></span> settings changes have been made</span></div>
     </div>
     <div>
       <div>
         At the tone, the time will be: 
         <span id="klok" data-shows="epoch"> </span>
       </div>
-      <div>
-        <div>Here are the fruitbats:</div>
-        <div class="dispy" id="fruitbat" data-expand>
-          My name is <span id="namespan" data-shows="name">🐄</span> and I
-          have eaten <span id="fruitspan" data-shows="fruitsEaten">∅</span> fruits.
-          My nom de guerre is: <span data-shows="secrets.nom"></span>.
+      <div class="fruitbat-display">
+        <div>
+          <div id="fruitbat-counter">There are <span data-shows="length"></span> fruitbats: </div>
+          <div id="fruitbat" data-expands>
+            My name is <span style="font-weight: bold" id="namespan" data-shows="name">🐄</span>,
+            and I have eaten <span id="fruitspan" data-shows="fruitsEaten">∅</span> fruits.
+            <span class="expander-as-if" data-expands="secrets">My nom de guerre is: <span is="show-secret" data-shows=""></span>.</span>
+          </div>
+        </div>
+        <div>
+          <table>
+            <tr>
+              <th>Name</th>
+              <th>Age (seconds)</th>
+              <th>Fruits eaten</th>
+              <th>Secret name</th>
+            </tr>
+            <tr data-expands>
+              <td data-shows="name"></td>
+              <td data-shows="age"></td>
+              <td> <span data-expands="fruitsEaten">🍎</span></td>
+              <td data-shows="secrets.nom"></td>
+            </tr>
+          </table>
         </div>
       </div>
       <hr>
       <div>
         <div>Rename the fruitbats here:</div>
-        <div class="dispy" data-expand>
-          <input type="text" class="fruitbat-renamer" data-controls="name">
+        <div class="fruitbat-display" data-expands>
+          <input type="text" style="width: 40em" class="fruitbat-renamer" data-controls="name">
         </div>
       </div>
     </div>
   </body>
   <script src="./uiulator.js"> </script>
   <script>
-    var fruitbats = [
-      { name: "Fred",               fruitsEaten: 0 },
-      { name: "Henrique",           fruitsEaten: 0, secrets: "yes" },
-      { name: "Smuggly-pugglewitz", fruitsEaten: 0, secrets: { nom: "spycow" } },
-    ];
+    const settings = {
+        alterationMode: 'rand',
+        minPopulation: 16,
+        maxPopulation: 24,
 
-    var time = {
+        // a record of which events caused settings to change:
+        changeEvents:  [ ],
+    };
+
+    const plants = undefined;
+    const fruitbats = [...Array(settings.minPopulation)].map(() => {
+      return newBat();
+    });
+
+    const time = {
       epoch: "timeless",
     };
 
-    var misc = uiulator(fruitbats, document.querySelectorAll(".dispy"));
-    var kup  = uiulator(time, document.getElementById("klok"));
+    function randInt(maxPlusOneOrFrom) {
+      if(maxPlusOneOrFrom.length !== undefined)
+          maxPlusOneOrFrom = maxPlusOneOrFrom.length;
+
+      return Math.floor(Math.random() * maxPlusOneOrFrom);
+    }
+
+    function randItem(from) {
+      return from[randInt(from)];
+    }
+
+    function nomDeGuerre() {
+       const nom = newName(1).replace(/"/g, '');
+       return nom;
+    }
+
+    function addTitle(name) {
+      const titles = [
+        'Sir', 'Chairman', 'Colonel', 'Associate Professor',
+        'Corporal', 'General', 'Ms.', 'Dame', 'His Lordship',
+        'The Honorable', 'Lady', 'Admiral', 'Dr.', 'Major',
+      ];
+      return `${randItem(titles)} ${name}`
+      
+    }
+
+    function addSuffixOrPrefix(name) {
+      const prefixes = [
+        ', child of ', ', daughter of ', ', son of ', 'Mac',
+        'von ', ', the Lord ', ', the Lady ',
+      ];
+      const suffixes = [
+        'son', 'dotter', 'owitz', 'berger', 'potty', 'ular', 'othy',
+        ' the Elder', ' the Younger', 'ski', 'ovitch', 'ly',
+        ' the Dreadfully Loathsome', 'stein', 'aroni', ' the Strange',
+        ' the Ancient', ' the Hippy', 'pie', 'berry', ' the Almighty', 
+        ' the Unlovable', ', PhD', ', Esq.', 'child',
+      ];
+
+      // it's getting a suffix or prefix, so remove all quotes:
+      name = name.replace(/"/g, '');
+
+      if(Math.random() < 0.5) {
+        return `${name}${randItem(suffixes)}`
+      } else {
+        const prefix = randItem(prefixes);
+        if(prefix[prefix.length - 1] !== ' ') {
+          // no space at the end of the prefix.... 
+          if(name.slice(0, 4) === 'the ') {
+            // so we'll want to remove the "the"
+            name = name.slice(4);
+          }
+        } else if(prefix[0] === ',') {
+          if(name[0] === ',') {
+            // Change (eg) "Foo, daughter of, son of Bar" to
+            //             "Foo, daughter of son of Bar"
+            name = name.slice(1);
+          }
+        }
+        return `${randItem(prefixes)}${name}`
+      }
+    }
+
+    function newName(len) {
+      len = len ?? Math.floor(Math.sqrt(Math.random() * 8) + 1);
+
+      const nameParts = [
+        '"Blackheart"', 'Smee', 'Burger', '"Hyperspace"', 'Nevil',
+        'Schmed', 'McSpangberger', 'Appocalypse', 'Chevins', 'Young',
+        'Space', '"Smiley"', 'Bozon', 'Strawberry', 'Margaret',
+        'Moonpie',  'Homeontherange', 'Alfred', 'Theosophe', 'Alastair',
+        '"Chippers"', 'Ruthless', '"Brains"', 'Smith',
+        'Luxuryyacht', 'Timewarp', 'Becket', 'Chipper', 'Higgly',
+        'Freckle', 'Jennifer', 'Courtney', 'Samuel', '"the Octopus"',
+        'Fred', 'Henrique', 'Puggle', 'Smuggly', '"Smooth Operator"',
+        '"Gabby"', 'Stark', '"Starchild"', 'Muon', 'Sméagol', 'Bear',
+        'Ursa', 'Prudence', 'Minor', 'Nigel'
+      ];
+      let name = "";
+      for(let partsLeft = len - 1; partsLeft >= 0; partsLeft--) {
+        const nameNum = randInt(nameParts);
+        let np = nameParts.splice(nameNum, 1, addSuffixOrPrefix(nameParts[nameNum]))[0];
+
+        if(np[0] === '"') {
+          // only want one nickname, so strip existing nickname quotes:
+          name = name.replace(/"/g, '');
+        }
+
+        if(partsLeft === 0) {
+          if(name.length) {
+            // .. last name may be treated differently:
+            if(np[0] === '"') {
+              np = `(AKA ${np})`;
+            } else if(Math.random() < .33*len) {
+              np = addSuffixOrPrefix(np);
+            }
+          }
+        }
+
+        // .. stuff like:
+        //    "the Octopus", daughter of Smoo
+        // needs to be changed to:
+        //    the Octopus, daughter of Smoo
+        if(np[0] === ',') {
+          // .. in fact, in this case let's kill all
+          // existing quotes and commas:
+          name = name.replace(/[",]/g, '');
+        }
+
+        if(np.slice(0, 4) === 'the ') {
+          if(name.length === 0) {
+            // if the name starts with "the", possibly remove it:
+            if(randInt(2)) {
+              np = np.slice(4);
+            }
+          } else if(partsLeft) {
+            // we're somewhere in the middle of the
+            // name, so add a comma:
+            np = `, ${np}`;
+          }
+        }
+
+        if(name.length === 0) {
+          name = np;
+        } else {
+          if(np[0] !== ',')
+            name += ' ';
+          name += np;
+        }
+      }
+
+      //if(Math.random() < 0.125) {
+      if(Math.random() < 1/6) {
+        name = addTitle(name);
+      }
+
+      // finally, if necessary, capitalize the first letter:
+      name = name.replace(/^"?[a-z]/, (ch) => { return ch.toUpperCase() });
+
+      return name;
+    }
+
+    uiulator(plants, document.getElementById("planter-box"));
+
+    const kup = uiulator(time, document.getElementById("klok"));
     window.setInterval(function() {
       time.epoch = Date.now()/1000;
       kup.update();
     }, 100);
 
+    const fbDisplay = document.querySelectorAll(".fruitbat-display")
+    const misc = uiulator(fruitbats, fbDisplay, {
+      'control-on-submit': true,
+    });
     window.setInterval(function() {
-      fruitbats[Math.floor(Math.random() * fruitbats.length)].fruitsEaten++;
+      if(fruitbats.length) {
+          fruitbats[Math.floor(Math.random() * fruitbats.length)].fruitsEaten++;
+      }
       misc.update();
-    }, 1000);
+    }, 763);
 
-    // after 2 seconds, add a fruitbat:
-    const addBats = window.setInterval(function() {
-        fruitbats.push({ name: "<a href='boo'>New Guy</a>", fruitsEaten: 0 });
-
-        // 10 is enough fruitbats:
-        if(fruitbats.length >= 10) {
-            window.clearInterval(addBats);
+    function newBat() {
+        const newBat = {
+            name: newName(),
+            fruitsEaten: 0,
+            birthsecond: Math.floor(Date.now()/1000),
+            get age() {
+                return Math.floor(Date.now()/1000) - this.birthsecond;
+            },
+        };
+        if(randInt(4) === 0) {
+            newBat.secrets = { nom: nomDeGuerre() };
         }
-    }, 2000)
+        return newBat;
+    }
+
+    const uset = uiulator(settings, document.getElementById("settings-controllers"), {
+        oncontrolchanged: (ev) => {
+            settings.changeEvents.push(ev);
+            uset.update();
+        },
+    });
+    function alterBats() {
+        if(document.getElementById('dynamic-fruitbats').checked) { 
+            switch(settings.alterationMode) {
+                case 'rand':
+                    randomlyAddOrDelete();
+                    break;
+                case 'cycle-up':
+                    cycleBats(true);
+                    break;
+                case 'cycle-down':
+                    cycleBats(false);
+                    break;
+            }
+        }
+    }
+
+    function cycleBats(forward) {
+        if(fruitbats.length < settings.maxPopulation) {
+            if(forward) fruitbats.push   (newBat());
+            else        fruitbats.unshift(newBat());
+        }
+        if(fruitbats.length > settings.minPopulation) {
+            if(forward) fruitbats.shift();
+            else        fruitbats.pop();
+        }
+    }
+
+    function randomlyAddOrDelete() {
+        let add = true;
+        if(fruitbats.length >= settings.maxPopulation) {
+            add = false;
+        } else if(fruitbats.length <= settings.minPopulation) {
+            add = true;
+        } else {
+            // random, but give a slight bias toward adding
+            add = Math.random() > 0.4;
+        }
+
+        if(add) {
+            const rn = Math.floor(Math.random() * fruitbats.length + 1);
+            fruitbats.splice(rn, 0, newBat());
+        } else {
+            // pick one and remove it:
+            const rn = Math.floor(Math.random() * fruitbats.length);
+            fruitbats.splice(rn, 1);
+        }
+    }
+
+    // every 2 seconds, potentially add or remove fruitbats or whatever:
+    window.setInterval(alterBats, 2000);
+
   </script>
 </html>
 
