@@ -244,17 +244,27 @@ TODO:
             return [ undefined, undefined ];
         },
         shows: function(elem, data, vs) {
-            // don't change the active element - it's very annoying
-            // for users if they are trying to copy and paste or type
-            // something in and you change it:
-            if(document.activeElement !== elem) {
-                elem[nowShowing] = data;
-                const val = evaluate(data, parseVarSpec(vs));
-                if(elem.value === undefined) {
-                    // normal div or span or whatever
-                    elem.textContent = val;
-                } else {
-                    elem.value = val; // inputs, dropdowns etc
+            elem[nowShowing] = data;
+            const val = evaluate(data, parseVarSpec(vs));
+
+            if(elem.type === "radio") {
+                // radio buttons are special because there's one
+                // value being show/controlled by multiple elements,
+                // but each of those elements has a (constant) "value"
+                // it sets when selected.  So, it should be selected
+                // if the value matches:
+                elem.checked = val === elem.value;
+            } else {
+                // don't change the active element - it's very annoying
+                // for users if they are trying to copy and paste or type
+                // something in and you change it:
+                if(document.activeElement !== elem) {
+                    if(elem.value === undefined) {
+                        // normal div or span or whatever
+                        elem.textContent = val;
+                    } else {
+                        elem.value = val; // normal inputs, dropdowns etc
+                    }
                 }
             }
             
@@ -262,7 +272,7 @@ TODO:
         },
         controls: function(elem, data, vs) {
 
-            // controllers always show what they control:
+            // (normal) controllers always show what they control:
             elem.dataset.shows = vs;
 
             // 2 possible modes:
