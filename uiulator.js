@@ -25,7 +25,9 @@
 /**
    uiulator(dataSource, elements) - 
  */
-var uiulator = function(dataSource, elements) {
+var uiulator = function(dataSource, elements, options) {
+
+    options ||= { };
 
     // if no elements were specified, do them all!  This is typically
     // a one-off, so I'm not too worried about performance.  If callers
@@ -59,21 +61,23 @@ TODO:
    ✓ expand n times if it's not a collection but is numeric
    ✓ fix ids in clones somehow so they don't collide
    - add default update intervals
-     - OR see if we can use Object.watch??
-       https://stackoverflow.com/questions/3051114/value-of-variable-has-changed-or-not
-       ^^^ but I can't find that on MDN and it really doesn't seem to exist.
-       MAYBE have an option to install setters which fire off updates?
+     - AND/OR use this to capture changes:
+         https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+       ^^but I think only optionally, because (I suspect) this modifies the
+       objects.
    x option for tables:  cloning headers makes td?
      ✓ test tables
    - maybe change the data-shows etc to like data-uiulator-shows
-
+     ^^^^^^ or, better, add an option so the user can set the commands.
  */
 
     // these are for stashing data in expander elements:
     const origStyles     = Symbol();
     const generatedElems = Symbol();
 
-    // and this is for updaters:
+    // and this is for updaters (or anything else
+    // which wants access more directly to the thing
+    // being shown)
     const nowShowing = Symbol();
 
     function parseVarSpec(vs) {
@@ -149,7 +153,7 @@ TODO:
                 `Can't set ${varPath}[${specificVar}] because it's undefined`
             );
         } else {
-            if(typeof(elem.value) !== undefined) {
+            if(elem.value !== undefined) {
                 container[specificVar] = elem.value;
             } else {
                 container[specificVar] = elem.innerText;
@@ -299,8 +303,12 @@ TODO:
 
     updateDisplays();
 
+    if(options['poll-interval'] !== undefined) {
+        window.setInterval(updateDisplays, options['poll-interval']);
+    }
+
     return {
-        version: 0.1,
+        version: 0.2,
         /**
            update() - call this to sync the data to the display
          */
