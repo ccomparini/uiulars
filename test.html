@@ -36,6 +36,7 @@
       <label>
         Max population: <input type="number" min="0" max="50" data-controls="maxPopulation"></input>
       </label>
+      <div><span data-shows="changeEvents.length"></span> settings changes have been made</span></div>
     </div>
     <div>
       <div>
@@ -83,6 +84,9 @@
         alterationMode: 'rand',
         minPopulation: 16,
         maxPopulation: 24,
+
+        // a record of which events caused settings to change:
+        changeEvents:  [ ],
     };
 
     const plants = undefined;
@@ -244,7 +248,10 @@
       kup.update();
     }, 100);
 
-    const misc = uiulator(fruitbats, document.querySelectorAll(".fruitbat-display"));
+    const fbDisplay = document.querySelectorAll(".fruitbat-display")
+    const misc = uiulator(fruitbats, fbDisplay, {
+      'control-on-submit': true,
+    });
     window.setInterval(function() {
       if(fruitbats.length) {
           fruitbats[Math.floor(Math.random() * fruitbats.length)].fruitsEaten++;
@@ -267,7 +274,12 @@
         return newBat;
     }
 
-    uiulator(settings, document.getElementById("settings-controllers"));
+    const uset = uiulator(settings, document.getElementById("settings-controllers"), {
+        oncontrolchanged: (ev) => {
+            settings.changeEvents.push(ev);
+            uset.update();
+        },
+    });
     function alterBats() {
         if(document.getElementById('dynamic-fruitbats').checked) { 
             switch(settings.alterationMode) {

@@ -163,6 +163,10 @@ TODO:
         if(options['update-on-change']) {
             updateDisplays();
         }
+
+        if(options['oncontrolchanged']) {
+            options['oncontrolchanged'](ev, elem, container, specificVar);
+        }
     }
 
     // given an integer, returns an iterable object
@@ -261,8 +265,17 @@ TODO:
             // controllers always show what they control:
             elem.dataset.shows = vs;
 
-            elem.addEventListener('change', onControlModified);
-            elem.addEventListener('input',  onControlModified);
+            // 2 possible modes:
+            //   - 'control-on-submit' means controls only modify
+            //     the data when there's a "change" event (i.e. when
+            //     the user hit "return" or exeited the input or whatever)
+            //   - the default old-style where the event was fired on
+            //     any input
+            if(options['control-on-submit']) {
+                elem.addEventListener('change', onControlModified);
+            } else {
+                elem.addEventListener('input',  onControlModified);
+            }
 
             // now that the event handlers are installed,
             // we no longer need/want this:
