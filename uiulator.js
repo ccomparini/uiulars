@@ -159,6 +159,10 @@ TODO:
                 container[specificVar] = elem.innerText;
             }
         }
+
+        if(options['update-on-change']) {
+            updateDisplays();
+        }
     }
 
     // given an integer, returns an iterable object
