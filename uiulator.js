@@ -21,6 +21,7 @@
   controlled or displayed:
     - data-shows=<member>    - show the named member of the scope
     - data-expands=<member>  - duplicate for each item in the member
+    - data-shows-key         - within an expansion, show key instead of value
     - data-controls=<member> - set the named member from the value or content of the element
     - data-scope=<member>    - set the scope for all 
 
@@ -151,6 +152,7 @@ var uiulator = function(dataSource, elements, options) {
         "scope", // grr should this then be "scopes"?
         "expands",
         "controls",
+        "showsKey", // js renames this one
         "shows",
     ];
 
@@ -187,28 +189,32 @@ var uiulator = function(dataSource, elements, options) {
         return data;
     }
 
-    function fixIds(clone, key) {
+    function rescopeClone(clone, key) {
         // change the id of the clone, or else it inherits
         // the id and we get duplicate ids:
         if(clone.id !== "")
             clone.id = clone.id + "-" + key;
 
+        // ... and do the appropriate key, if we show that:
+        if(clone.dataset?.showsKey !== undefined)
+            clone.dataset.showsKey = key;
+
         for(const kid of clone.childNodes) {
-            fixIds(kid, key);
+            rescopeClone(kid, key);
         }
     }
 
-    function cloneAndExpand(elem, data, vs) {
+    function cloneAndExpand(elem, data, key) {
         let newElem = elem.cloneNode(true);
-        fixIds(newElem, vs);
+        rescopeClone(newElem, key);
 
         for(const stel in elem[origStyles]) {
             newElem.style[stel] = elem[origStyles][stel];
         }
 
         // OK so here's how we'll do it: the new element gets
-        // scoped according to the vs passed:
-        newElem.dataset.scope = vs;
+        // scoped according to the key passed:
+        newElem.dataset.scope = key;
         elem.parentElement.insertBefore(newElem, elem);
 
         // Also, 
@@ -227,7 +233,7 @@ var uiulator = function(dataSource, elements, options) {
         }
     }
 
-    function varForElement(elem) {
+    function keyForElement(elem) {
         const ds = elem.dataset;
         if(ds) {
             for(const marker of controlOrder) {
@@ -265,6 +271,41 @@ var uiulator = function(dataSource, elements, options) {
             options['oncontrolchanged'](
                 ev, elem, container, specificVar, oldVal
             );
+        }
+    }
+
+    function doShow(elem, val) {
+        if(elem.type === "radio") {
+            // Radio buttons are special because there's one
+            // value being shown/controlled by multiple elements,
+            // but each of those elements has a (constant) "value"
+            // it sets when selected.  So, it should be selected
+            // if the value matches, but the value of the radio
+            // button should -not- be changed, since that would
+            // just set all the radio button values to the current
+            // value.  :D
+            elem.checked = val === elem.value;
+/*
+        } else if(elem.tagName === "OPTION") {
+            // OK <option>s are also special.  They need both
+            // the value and some kind of content set.  grr.
+            elem.textContent = val;
+            elem.value = keyForElement(elem);
+//            elem.value = val;
+ */
+        } else {
+            // don't change the active element - it's very annoying
+            // for users if they are trying to copy and paste or type
+            // something in and you change it:
+            if(document.activeElement !== elem) {
+                if(elem.value === undefined) {
+                    // normal div or span or whatever
+                    elem.textContent = val;
+                } else {
+                    // normal inputs:
+                    elem.value = val;
+                }
+            }
         }
     }
 
@@ -341,41 +382,13 @@ var uiulator = function(dataSource, elements, options) {
             // on the clones.
             return [ undefined, undefined ];
         },
+        showsKey: function(elem, data, vs) {
+            doShow(elem, keyForElement(elem));
+            return [ elem, data ];
+        },
         shows: function(elem, data, vs) {
             elem[nowShowing] = data;
-            const val = evaluate(data, parseVarSpec(vs));
-
-            if(elem.type === "radio") {
-                // Radio buttons are special because there's one
-                // value being shown/controlled by multiple elements,
-                // but each of those elements has a (constant) "value"
-                // it sets when selected.  So, it should be selected
-                // if the value matches, but the value of the radio
-                // button should -not- be changed, since that would
-                // just set all the radio button values to the current
-                // value.  :D
-                elem.checked = val === elem.value;
-            } else if(elem.tagName === "OPTION") {
-                // OK <option>s are also special.  In the option case,
-                // .. grr well 
-                elem.textContent = val;
-//                elem.value = varForElement(elem);
-                elem.value = val;
-            } else {
-                // don't change the active element - it's very annoying
-                // for users if they are trying to copy and paste or type
-                // something in and you change it:
-                if(document.activeElement !== elem) {
-                    if(elem.value === undefined) {
-                        // normal div or span or whatever
-                        elem.textContent = val;
-                    } else {
-                        // normal inputs:
-                        elem.value = val;
-                    }
-                }
-            }
-            
+            doShow(elem, evaluate(data, parseVarSpec(vs)));
             return [ elem, data ];
         },
         controls: function(elem, data, vs) {
