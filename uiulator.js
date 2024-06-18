@@ -30,6 +30,45 @@
   object within was selected by data-scope, or the current item
   in a data-expands.
 
+  So, for example, say you have some data:
+    const someData = {
+        luckyNumbers: [ 7, 8, 23 ],
+        opinions: {
+            bob: [ "Green is the best color", "Pizza is too greasy" ],
+            mary: [ "Pizza is great" ],
+            schmedly: [ ],
+        },
+    };
+
+  And some html for displaying those data:
+    ...
+    <div id="numbershower">
+      I consider these numbers lucky:
+      <span data-expands="luckyNumbers"></span>
+    </div>
+
+    <div id="op-ed" data-scope="opinions">
+      <div data-expands="">
+        <span data-shows-key></span> has <span data-shows="length"> opinions:
+        <ul> <li data-expands=""></li> </ul>
+      </div>
+    </div>
+
+    <div class="numberpicker">
+      <label> select your lucky number here:
+        <select name="pets" data-controls="currentNumber">
+XXX options not dtrt
+        </select>
+      </label>
+    </div>
+
+   ... the page will show:
+    - a span displaying each lucky number,
+    - a div for each set of opinions, within which there will be a
+      span showing whose opinions, how many opinions they have,
+      followed by a span for each opinion.
+    - finally, a div with a selector for letting the user enter
+      which number is their lucky number.
  */
 
 /**
@@ -203,6 +242,7 @@ TODO:
                 `Can't set ${varPath}[${specificVar}] because it's undefined`
             );
         } else {
+            var oldVal = container[specificVar];
             if(elem.value !== undefined) {
                 container[specificVar] = elem.value;
             } else {
@@ -215,7 +255,9 @@ TODO:
         }
 
         if(options['oncontrolchanged']) {
-            options['oncontrolchanged'](ev, elem, container, specificVar);
+            options['oncontrolchanged'](
+                ev, elem, container, specificVar, oldVal
+            );
         }
     }
 
@@ -305,11 +347,22 @@ TODO:
 
             if(elem.type === "radio") {
                 // radio buttons are special because there's one
-                // value being show/controlled by multiple elements,
+                // value being shown/controlled by multiple elements,
                 // but each of those elements has a (constant) "value"
                 // it sets when selected.  So, it should be selected
                 // if the value matches:
                 elem.checked = val === elem.value;
+            } else if(elem.tagName === "OPTION") {
+                // OK options are simlarly special, though since
+                // the var they would control would normally be
+                // controlled via the <select> element containing
+                // the option element (unless, I guess, they are
+                // multi select?  need to check that)
+                elem.checked = val === elem.value;
+                elem.textContent = val;
+// XXX this doesn't work in the practical case because data-expands creates a new scope,
+// so we aren't given a "vs" at all.
+                elem.value = vs; // XXX only take the end?
             } else {
                 // don't change the active element - it's very annoying
                 // for users if they are trying to copy and paste or type
@@ -319,7 +372,8 @@ TODO:
                         // normal div or span or whatever
                         elem.textContent = val;
                     } else {
-                        elem.value = val; // normal inputs, dropdowns etc
+                        // normal inputs:
+                        elem.value = val;
                     }
                 }
             }
