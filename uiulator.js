@@ -255,6 +255,12 @@ TODO:
             const oldGenEls = elem[generatedElems] ?? { };
             const newGenEls = { };
             if(data) {
+                if(typeof(data) === 'string') {
+                    // errf.. if it's a string, we don't want it to
+                    // expand for each char:
+                    data = [ data ];
+                }
+                    
                 if(Number.isInteger(data)) {
                     var keys = iterableInteger(data);
                 } else {
