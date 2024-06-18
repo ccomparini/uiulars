@@ -7,7 +7,8 @@
 
    - Lay out your html as you like.  Mark elements on which you'd
      like to display data with "data-shows".  Mark elements which
-     you want to use to set data with "data-controls".
+     you want to use to set data with "data-controls", etc (see
+     below).
 
    - apply the uiulator something like:
        var my_data = { x: 1, y: 2 }; // or whatever
@@ -16,14 +17,63 @@
 
      uiulator can take a list of elements or a single element.
 
-  Element markers:
-    - data-shows:  
-    - data-expand:  
-    - data-controls:  
+  There are 4 element "markers" which determine how the data are
+  controlled or displayed:
+    - data-shows=<member>    - show the named member of the scope
+    - data-expands=<member>  - duplicate for each item in the member
+    - data-controls=<member> - set the named member from the value or content of the element
+    - data-scope=<member>    - set the scope for all 
+
+  In all cases, if the member is unspecified (empty string), the
+  current scope is used.  "Current scope", in this context, is
+  either the "dataSource" passed to the uiulator, or whatever sub
+  object within was selected by data-scope, or the current item
+  in a data-expands.
+
  */
 
 /**
-   uiulator(dataSource, elements) - 
+   uiulator(dataSource)
+   uiulator(dataSource, elements)
+   uiulator(dataSource, elements, options)
+
+   Applies uiular rules to the specified elements, using data from the
+   dataSource passed.
+
+   Parameters:
+     - dataSource: A javascript variable (typically an array or object, but
+                   may be a scalar value) to be displayed on and/or set from
+                   the indicated elements.
+     - elements:   The set of root elements to which to apply the uiulator.
+                   May be sepcified as a single Element or an array of
+                   Elements.  If not specified, the global document is used.
+                   https://developer.mozilla.org/en-US/docs/Web/API/Element
+     - options:    An object with 0 or more of the following:
+                   - 'control-on-submit': <boolean>
+                     If true, only modify the dataSource when it appears the
+                     user has "submitted" the data (typically on a 'change'
+                     event).  Otherwise (of false or omitted), data in the
+                     dataSource may be modified as soon as any change is
+                     detected (eg as the user is typing).
+                   - oncontrolchanged: <function (ev, elem, container, var, old)>
+                     Causes the specified function to be called after a
+                     data-control makes a change to data.  Parameters:
+                       - ev: the Event which precipitated the change
+                       - elem: the data-control Element which made the change
+                       - container: the containing scope of the changed var
+                       - var: the name of the variable which was changed
+                       - old: the old value of the variable
+                   - poll-interval: <numeric microseconds>
+                     If specified, a timer will be scheduled to call update()
+                     on the specified interval.
+                   - 'update-on-change': <boolean>
+                     If true, call update() any time a change is detected on
+                     an element marked with data-controls.
+
+                   If neither poll-interval nor update-on-change are set,
+                   it's up to callers to make sure update() is called
+                   as necessary.
+   
  */
 var uiulator = function(dataSource, elements, options) {
 
