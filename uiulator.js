@@ -211,6 +211,8 @@ var uiulator = function(dataSource, elements, options) {
         newElem.dataset.scope = vs;
         elem.parentElement.insertBefore(newElem, elem);
 
+        // Also, 
+
         return newElem;
     }
 
@@ -344,23 +346,21 @@ var uiulator = function(dataSource, elements, options) {
             const val = evaluate(data, parseVarSpec(vs));
 
             if(elem.type === "radio") {
-                // radio buttons are special because there's one
+                // Radio buttons are special because there's one
                 // value being shown/controlled by multiple elements,
                 // but each of those elements has a (constant) "value"
                 // it sets when selected.  So, it should be selected
-                // if the value matches:
+                // if the value matches, but the value of the radio
+                // button should -not- be changed, since that would
+                // just set all the radio button values to the current
+                // value.  :D
                 elem.checked = val === elem.value;
             } else if(elem.tagName === "OPTION") {
-                // OK options are simlarly special, though typically
-                // the var they control is actually controlled via
-                // the <select> element which contains them.
-                // Regardless, 
-                elem.checked = val === elem.value;
+                // OK <option>s are also special.  In the option case,
+                // .. grr well 
                 elem.textContent = val;
-// XXX should this happen on expand, instead?  I think yes.
-// Try:  move the "checked" logic inside the else,
-// set the value from clone
-                elem.value = varForElement(elem);
+//                elem.value = varForElement(elem);
+                elem.value = val;
             } else {
                 // don't change the active element - it's very annoying
                 // for users if they are trying to copy and paste or type

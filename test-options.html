@@ -10,6 +10,12 @@
       <div>
         Selected fruit: <span data-shows="selectedFruit"></span>.
       </div>
+      <select name="thingoes" data-controls="thingo">
+        <option data-expands="anArray" data-shows></option>
+      </select>
+      <div>
+        <span data-expands="thingo">Thingo: <span data-shows></span>. </span>
+      </div>
     </div>
   </body>
   <script src="./uiulator.js"> </script>
@@ -23,6 +29,7 @@
         peach: '🍑',
       },
       selectedFruit: 'grapes',
+      anArray: [ 'foo', 'bar', 'bat' ],
     };
 
     uiulator(data, document.getElementById("shower"), {
