@@ -1,0 +1,34 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="/fbm.css" type "text/css">
+  </head>
+  <body>
+    <div id="shower">
+      <select name="fruit" data-controls="selectedFruit">
+        <option value="" data-expands="fruits" data-shows></option>
+      </select>
+      <div>
+        Selected fruit: <span data-shows="selectedFruit"></span>.
+      </div>
+    </div>
+  </body>
+  <script src="./uiulator.js"> </script>
+  <script>
+    const data = {
+      fruits: {
+        apple: '🍎',
+        banana: '🍌',
+        bat: '🦇',
+        grapes: '🍇',
+        peach: '🍑',
+      },
+      selectedFruit: 'grapes',
+    };
+
+    uiulator(data, document.getElementById("shower"), {
+      'update-on-change': true,
+    }).update();
+        
+  </script>
+</html>
+

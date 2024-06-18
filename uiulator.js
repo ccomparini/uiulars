@@ -142,23 +142,17 @@ var uiulator = function(dataSource, elements, options) {
         }
     }
 
-/*
-TODO:
-   ✓ controls
-   - checkbox controls grrr
-   ✓ hide the expanders
-   ✓ expand n times if it's not a collection but is numeric
-   ✓ fix ids in clones somehow so they don't collide
-   - add default update intervals
-     - AND/OR use this to capture changes:
-         https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-       ^^but I think only optionally, because (I suspect) this modifies the
-       objects.
-   x option for tables:  cloning headers makes td?
-     ✓ test tables
-   - maybe change the data-shows etc to like data-uiulator-shows
-     ^^^^^^ or, better, add an option so the user can set the commands.
- */
+    // This is the order in which element markers are applied:
+    // "data-scope" (and "data-expands") adjust the scope for
+    // the current element (and all child elements) before
+    // anything else, and "data-shows" must come last so that
+    // it always shows the latest state.
+    const controlOrder = [
+        "scope", // grr should this then be "scopes"?
+        "expands",
+        "controls",
+        "shows",
+    ];
 
     // these are for stashing data in expander elements:
     const origStyles     = Symbol();
@@ -231,6 +225,17 @@ TODO:
         }
     }
 
+    function varForElement(elem) {
+        const ds = elem.dataset;
+        if(ds) {
+            for(const marker of controlOrder) {
+                if(ds[marker] !== undefined)
+                    return ds[marker];
+            }
+        }
+        return undefined;
+    }
+
     function onControlModified(ev) {
         const elem = ev.target;
         const data = elem[nowShowing];
@@ -272,14 +277,7 @@ TODO:
       }();
     }
 
-    // this is separate from upFunc because the order matters
-    const updaters = [
-        "scope", // grr should this then be "scopes"?
-        "expands",
-        "controls",
-        "shows",
-    ];
-
+    // update functions, by name:
     const upFunc = {
         scope: function(elem, data, vs) {
             // data = evaluate data[vs]; continue on elem with new data
@@ -353,16 +351,16 @@ TODO:
                 // if the value matches:
                 elem.checked = val === elem.value;
             } else if(elem.tagName === "OPTION") {
-                // OK options are simlarly special, though since
-                // the var they would control would normally be
-                // controlled via the <select> element containing
-                // the option element (unless, I guess, they are
-                // multi select?  need to check that)
+                // OK options are simlarly special, though typically
+                // the var they control is actually controlled via
+                // the <select> element which contains them.
+                // Regardless, 
                 elem.checked = val === elem.value;
                 elem.textContent = val;
-// XXX this doesn't work in the practical case because data-expands creates a new scope,
-// so we aren't given a "vs" at all.
-                elem.value = vs; // XXX only take the end?
+// XXX should this happen on expand, instead?  I think yes.
+// Try:  move the "checked" logic inside the else,
+// set the value from clone
+                elem.value = varForElement(elem);
             } else {
                 // don't change the active element - it's very annoying
                 // for users if they are trying to copy and paste or type
@@ -414,7 +412,7 @@ TODO:
     function updateElements(elem, data) {
         const ds = elem.dataset;
         if(ds) {
-            for(const updater of updaters) {
+            for(const updater of controlOrder) {
                 if(ds[updater] !== undefined) {
                     if(breakOn[ds[updater]]) {
                         console.log(`give me a break on ${updater} ${ds[updater]}`);
