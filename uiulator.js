@@ -21,15 +21,18 @@
   controlled or displayed:
     - data-shows=<member>    - show the named member of the scope
     - data-expands=<member>  - duplicate for each item in the member
-    - data-shows-key         - within an expansion, show key instead of value
     - data-controls=<member> - set the named member from the value or content of the element
     - data-scope=<member>    - set the scope for all 
 
-  In all cases, if the member is unspecified (empty string), the
-  current scope is used.  "Current scope", in this context, is
+  For all the above markers, if the member is unspecified (empty string),
+  the current scope is used.  "Current scope", in this context, is
   either the "dataSource" passed to the uiulator, or whatever sub
   object within was selected by data-scope, or the current item
   in a data-expands.
+
+  Additionally, the special "member" '@key' may be used in "data-shows"
+  and "value" to specify the expanded key (the particular case where
+  it's useful for "value" is when setting values for <option> tags).
 
   So, for example, say you have some data:
     const someData = {
@@ -50,15 +53,15 @@
 
     <div id="op-ed" data-scope="opinions">
       <div data-expands="">
-        <span data-shows-key></span> has <span data-shows="length"> opinions:
+        <span data-shows="@key"></span> has <span data-shows="length"> opinions:
         <ul> <li data-expands=""></li> </ul>
       </div>
     </div>
 
     <div class="numberpicker">
       <label> select your lucky number here:
-        <select name="pets" data-controls="currentNumber">
-XXX options not dtrt
+        <select name="lucky" data-controls="currentNumber">
+          <option data-expands="luckyNumbers"/>
         </select>
       </label>
     </div>
@@ -152,13 +155,14 @@ var uiulator = function(dataSource, elements, options) {
         "scope", // grr should this then be "scopes"?
         "expands",
         "controls",
-        "showsKey", // js renames this one
         "shows",
     ];
 
     // these are for stashing data in expander elements:
     const origStyles     = Symbol();
     const generatedElems = Symbol();
+    const noSplatValue   = Symbol();
+    const noSplatText    = Symbol();
 
     // and this is for updaters (or anything else
     // which wants access more directly to the thing
@@ -195,10 +199,16 @@ var uiulator = function(dataSource, elements, options) {
         if(clone.id !== "")
             clone.id = clone.id + "-" + key;
 
-        // ... and show the appropriate key, if that's a
-        // thing for this element:
-        if(clone.dataset?.showsKey !== undefined)
-            clone.dataset.showsKey = key;
+        if(clone.value === '@key') {
+            clone.value = key;
+            clone[noSplatValue] = true;
+        }
+
+        if(clone.dataset?.shows === '@key') {
+            clone.innerText     = key;
+            clone.dataset.shows = "";  // grrr dubious
+            clone[noSplatText] = true;
+        }
 
         for(const kid of clone.childNodes) {
             rescopeClone(kid, key);
@@ -273,6 +283,14 @@ var uiulator = function(dataSource, elements, options) {
         }
     }
 
+    function isValueWritable(elem) {
+        return elem.value !== undefined && !elem[noSplatValue];
+    }
+
+    function isTextWritable(elem) {
+        return !elem[noSplatText];
+    }
+
     function doShow(elem, val) {
         if(elem.type === "radio") {
             // Radio buttons are special because there's one
@@ -287,28 +305,21 @@ var uiulator = function(dataSource, elements, options) {
         } else if(elem.tagName === "OPTION") {
             // OK <option>s are also special.  They need both
             // the value and some kind of content set.  grr.
-// options for object case:
-//   we want to be able to make elem value = data key
-// Otherwise, we want both to be the data value.
-// grrrr...
-            if(elem.dataset?.showsKey !== undefined) {
+            if(isValueWritable(elem))
+                elem.value = val;
+            if(isTextWritable(elem))
                 elem.textContent = val;
-                elem.value       = val;
-            } else {
-                elem.textContent = val;
-                elem.value = keyForElement(elem);
-            }
         } else {
             // don't change the active element - it's very annoying
             // for users if they are trying to copy and paste or type
             // something in and you change it:
             if(document.activeElement !== elem) {
-                if(elem.value === undefined) {
+                if(isValueWritable(elem)) {
+                    // inputs/controls, typically:
+                    elem.value = val;
+                } else if(isTextWritable(elem)) {
                     // normal div or span or whatever
                     elem.textContent = val;
-                } else {
-                    // normal inputs:
-                    elem.value = val;
                 }
             }
         }
@@ -386,11 +397,6 @@ var uiulator = function(dataSource, elements, options) {
             // part of the tree; all other updates will be done
             // on the clones.
             return [ undefined, undefined ];
-        },
-        showsKey: function(elem, data, vs) {
-// OK IN THE OPTIONS CASE we need both the evaluate() and the reg'lr.
-            doShow(elem, keyForElement(elem));
-            return [ elem, data ];
         },
         shows: function(elem, data, vs) {
             elem[nowShowing] = data;

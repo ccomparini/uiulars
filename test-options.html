@@ -5,7 +5,7 @@
   <body>
     <div id="shower">
       <select name="fruit" data-controls="selectedFruit">
-        <option data-expands="fruits" data-shows-key></option>
+        <option id="fruit-picker" value="@key" data-expands="fruits" data-shows></option>
       </select>
       <div>
         Selected fruit: <span data-shows="selectedFruit"></span>.
@@ -16,6 +16,11 @@
         <option data-expands="anArray" data-shows></option>
       </select>
       <span data-expands="thingo">Thingo: <span data-shows></span>. </span>
+      <hr>
+      <select name="fruit-by-value" data-controls="fruitValue">
+        <option data-expands="fruits" data-shows="@key"></option>
+      </select>
+      , the <i>fruit de nuit</i>, looks like <span data-shows="fruitValue"></span>.
     </div>
   </body>
   <script src="./uiulator.js"> </script>
@@ -29,6 +34,7 @@
         peach: '🍑',
       },
       selectedFruit: 'grapes',
+      fruitValue: '🍑',
       anArray: [ 'foo', 'bar', 'bat' ],
     };
 
