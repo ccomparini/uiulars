@@ -462,7 +462,7 @@ var uiulator = function(dataSource, elements, options) {
     }
 
     return {
-        version: 0.2,
+        version: 0.3,
         /**
            update() - call this to sync the data to the display
          */
