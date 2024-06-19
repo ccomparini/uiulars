@@ -10,12 +10,12 @@
       <div>
         Selected fruit: <span data-shows="selectedFruit"></span>.
       </div>
+      <hr>
       <select name="thingoes" data-controls="thingo">
+        <option disabled selected value=undefined>--- Pick a thingo ---</option>
         <option data-expands="anArray" data-shows></option>
       </select>
-      <div>
-        <span data-expands="thingo">Thingo: <span data-shows></span>. </span>
-      </div>
+      <span data-expands="thingo">Thingo: <span data-shows></span>. </span>
     </div>
   </body>
   <script src="./uiulator.js"> </script>
@@ -35,7 +35,6 @@
     uiulator(data, document.getElementById("shower"), {
       'update-on-change': true,
     }).update();
-        
   </script>
 </html>
 

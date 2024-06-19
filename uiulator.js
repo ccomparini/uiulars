@@ -195,7 +195,8 @@ var uiulator = function(dataSource, elements, options) {
         if(clone.id !== "")
             clone.id = clone.id + "-" + key;
 
-        // ... and do the appropriate key, if we show that:
+        // ... and show the appropriate key, if that's a
+        // thing for this element:
         if(clone.dataset?.showsKey !== undefined)
             clone.dataset.showsKey = key;
 
@@ -216,8 +217,6 @@ var uiulator = function(dataSource, elements, options) {
         // scoped according to the key passed:
         newElem.dataset.scope = key;
         elem.parentElement.insertBefore(newElem, elem);
-
-        // Also, 
 
         return newElem;
     }
@@ -285,14 +284,20 @@ var uiulator = function(dataSource, elements, options) {
             // just set all the radio button values to the current
             // value.  :D
             elem.checked = val === elem.value;
-/*
         } else if(elem.tagName === "OPTION") {
             // OK <option>s are also special.  They need both
             // the value and some kind of content set.  grr.
-            elem.textContent = val;
-            elem.value = keyForElement(elem);
-//            elem.value = val;
- */
+// options for object case:
+//   we want to be able to make elem value = data key
+// Otherwise, we want both to be the data value.
+// grrrr...
+            if(elem.dataset?.showsKey !== undefined) {
+                elem.textContent = val;
+                elem.value       = val;
+            } else {
+                elem.textContent = val;
+                elem.value = keyForElement(elem);
+            }
         } else {
             // don't change the active element - it's very annoying
             // for users if they are trying to copy and paste or type
@@ -383,6 +388,7 @@ var uiulator = function(dataSource, elements, options) {
             return [ undefined, undefined ];
         },
         showsKey: function(elem, data, vs) {
+// OK IN THE OPTIONS CASE we need both the evaluate() and the reg'lr.
             doShow(elem, keyForElement(elem));
             return [ elem, data ];
         },
