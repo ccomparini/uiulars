@@ -1,0 +1,64 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="/default.css">
+    <title>uiulator static display example</title>
+  </head>
+  <body>
+    <div style="display:flex">
+      <fieldset style="float:inline-flex">
+        <legend>Example js</legend>
+        <code id="source-code" style="white-space: pre;" data-shows="text">
+        </code>
+      </fieldset>
+
+      <fieldset style="float: inline-flex;" id="result">
+        <legend>Edit/view data</legend>
+        <div id="numbershower">
+          I consider these numbers lucky:
+          <span data-expands="luckyNumbers" data-shows></span>
+        </div>
+
+        <div id="op-ed" data-scope="opinions">
+          <div data-expands>
+            <span data-shows="@key"></span> has <span data-shows="length"></span> opinions:
+            <ul> <li data-expands data-shows></li> </ul>
+          </div>
+        </div>
+
+        <div class="numberpicker">
+          <label> select your lucky number here:
+            <select name="lucky" data-controls="currentNumber">
+              <option data-expands="luckyNumbers" data-shows></option>
+            </select>
+          </label>
+        </div>
+        <div data-expands="currentNumber">
+          Let me guess!  It's <span data-shows></span>.
+        </div>
+      </fieldset>
+    </div>
+  </body>
+  <script src="./uiulator.js"> </script>
+  <script id=this-script>
+    const data = {
+      luckyNumbers: [ 7, 8, 23 ],
+        opinions: {
+          Bob: [ "Green is the best color", "Pizza is too greasy" ],
+          Mary: [ "Pizza is great" ],
+          Schmedly: [ ],
+        },
+    };
+    const options = {
+      'update-on-change': true,
+    };
+    uiulator(data, document.getElementById('result'), options);
+
+    // separate instance to show source code:
+    uiulator(
+      document.getElementById('this-script'), // show this script
+      document.getElementById('source-code')  // in this html element
+    );
+  </script>
+</html>
+
+

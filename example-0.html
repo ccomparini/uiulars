@@ -1,0 +1,51 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="/default.css">
+    <title>uiulator static display example</title>
+  </head>
+  <body>
+    <div>Example of static data display using uiulator:</div>
+    <div style="display:flex">
+      <fieldset style="float:inline-flex">
+        <legend>Example js</legend>
+        <code style="white-space: pre;" data-shows="thisScript.text">
+        </code>
+      </fieldset>
+      <fieldset style="float: inline-flex;">
+        <legend>Result (.. plus this whole page)</legend>
+        <div data-scope="adventurers">
+          Stats for all the adventurers:
+          <hr>
+          <table>
+            <tr> <th>Name</th> <th>Str</th> <th>Wis</th> <th>Dex</th> </tr>
+            <tr data-expands>
+              <td data-shows="name">     </td>
+              <td data-shows="stats.str"></td>
+              <td data-shows="stats.wis"></td>
+              <td data-shows="stats.dex"></td>
+          </table>
+          <hr>
+        </div>
+        <div>We seek <i data-shows="quest"></i>.</div>
+      </fieldset>
+    </div>
+  </body>
+  <script src="./uiulator.js"> </script>
+  <script id=example>
+     // apply uiulator to all elements in this page 
+     uiulator({
+         adventurers: [
+             { name: "Theosophe",   stats: { str: 10, wis: 14, dex:  8 }, },
+             { name: "Starchild",   stats: { str: 14, wis:  8, dex: 12 }, },
+             { name: "Fredrick",    stats: { str: 12, wis: 14, dex: 10 }, },
+             { name: "Chudmuncher", stats: { str: 18, wis:  6, dex: 14 }, },
+             { name: "Moon-Unit",   stats: { str:  9, wis: 17, dex: 15 }, },
+             { name: "Gabby",       stats: { str: 10, wis: 14, dex: 18 }, },
+         ],
+         quest: "the Flaming Strawberry of Xendor",
+         thisScript: document.getElementById("example"),
+     });
+  </script>
+</html>
+
+

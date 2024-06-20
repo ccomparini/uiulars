@@ -24,11 +24,17 @@
     - data-controls=<member> - set the named member from the value or content of the element
     - data-scope=<member>    - set the scope for all 
 
-  In all cases, if the member is unspecified (empty string), the
-  current scope is used.  "Current scope", in this context, is
+  For all the above markers, if the member is unspecified (empty string),
+  the current scope is used.  "Current scope", in this context, is
   either the "dataSource" passed to the uiulator, or whatever sub
   object within was selected by data-scope, or the current item
   in a data-expands.
+
+  Additionally, the special "member" '@key' may be used in "data-shows"
+  and "value" to specify the expanded key (the particular case where
+  it's useful for "value" is when setting values for <option> tags).
+
+  See the example*.html files for examples.
 
  */
 
@@ -73,7 +79,7 @@
                    If neither poll-interval nor update-on-change are set,
                    it's up to callers to make sure update() is called
                    as necessary.
-   
+
  */
 var uiulator = function(dataSource, elements, options) {
 
@@ -103,27 +109,23 @@ var uiulator = function(dataSource, elements, options) {
         }
     }
 
-/*
-TODO:
-   ✓ controls
-   - checkbox controls grrr
-   ✓ hide the expanders
-   ✓ expand n times if it's not a collection but is numeric
-   ✓ fix ids in clones somehow so they don't collide
-   - add default update intervals
-     - AND/OR use this to capture changes:
-         https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-       ^^but I think only optionally, because (I suspect) this modifies the
-       objects.
-   x option for tables:  cloning headers makes td?
-     ✓ test tables
-   - maybe change the data-shows etc to like data-uiulator-shows
-     ^^^^^^ or, better, add an option so the user can set the commands.
- */
+    // This is the order in which element markers are applied:
+    // "data-scope" (and "data-expands") adjust the scope for
+    // the current element (and all child elements) before
+    // anything else, and "data-shows" must come last so that
+    // it always shows the latest state.
+    const controlOrder = [
+        "scope", // grr should this then be "scopes"?
+        "expands",
+        "controls",
+        "shows",
+    ];
 
     // these are for stashing data in expander elements:
     const origStyles     = Symbol();
     const generatedElems = Symbol();
+    const noSplatValue   = Symbol();
+    const noSplatText    = Symbol();
 
     // and this is for updaters (or anything else
     // which wants access more directly to the thing
@@ -154,28 +156,39 @@ TODO:
         return data;
     }
 
-    function fixIds(clone, key) {
+    function rescopeClone(clone, key) {
         // change the id of the clone, or else it inherits
         // the id and we get duplicate ids:
         if(clone.id !== "")
             clone.id = clone.id + "-" + key;
 
+        if(clone.value === '@key') {
+            clone.value = key;
+            clone[noSplatValue] = true;
+        }
+
+        if(clone.dataset?.shows === '@key') {
+            clone.innerText     = key;
+            clone.dataset.shows = "";  // grrr dubious
+            clone[noSplatText] = true;
+        }
+
         for(const kid of clone.childNodes) {
-            fixIds(kid, key);
+            rescopeClone(kid, key);
         }
     }
 
-    function cloneAndExpand(elem, data, vs) {
+    function cloneAndExpand(elem, data, key) {
         let newElem = elem.cloneNode(true);
-        fixIds(newElem, vs);
+        rescopeClone(newElem, key);
 
         for(const stel in elem[origStyles]) {
             newElem.style[stel] = elem[origStyles][stel];
         }
 
         // OK so here's how we'll do it: the new element gets
-        // scoped according to the vs passed:
-        newElem.dataset.scope = vs;
+        // scoped according to the key passed:
+        newElem.dataset.scope = key;
         elem.parentElement.insertBefore(newElem, elem);
 
         return newElem;
@@ -192,6 +205,17 @@ TODO:
         }
     }
 
+    function keyForElement(elem) {
+        const ds = elem.dataset;
+        if(ds) {
+            for(const marker of controlOrder) {
+                if(ds[marker] !== undefined)
+                    return ds[marker];
+            }
+        }
+        return undefined;
+    }
+
     function onControlModified(ev) {
         const elem = ev.target;
         const data = elem[nowShowing];
@@ -203,6 +227,7 @@ TODO:
                 `Can't set ${varPath}[${specificVar}] because it's undefined`
             );
         } else {
+            var oldVal = container[specificVar];
             if(elem.value !== undefined) {
                 container[specificVar] = elem.value;
             } else {
@@ -215,7 +240,58 @@ TODO:
         }
 
         if(options['oncontrolchanged']) {
-            options['oncontrolchanged'](ev, elem, container, specificVar);
+            options['oncontrolchanged'](
+                ev, elem, container, specificVar, oldVal
+            );
+        }
+    }
+
+    function isValueWritable(elem) {
+        return elem.value !== undefined && !elem[noSplatValue];
+    }
+
+    function isTextWritable(elem) {
+        return !elem[noSplatText];
+    }
+
+    function doShow(elem, val) {
+        if(elem.type === "radio") {
+            // Radio buttons are special because there's one
+            // value being shown/controlled by multiple elements,
+            // but each of those elements has a (constant) "value"
+            // it sets when selected.  So, it should be selected
+            // if the value matches, but the value of the radio
+            // button should -not- be changed, since that would
+            // just set all the radio button values to the current
+            // value.  :D
+            elem.checked = val === elem.value;
+        } else if(elem.tagName === "OPTION") {
+            // OK <option>s are also special.  They need both
+            // the value and some kind of content set.  grr.
+            if(isValueWritable(elem))
+                elem.value = val;
+            if(isTextWritable(elem))
+                elem.textContent = val;
+        } else if(elem.tagName === "LI") {
+            // yay apparently more tags are special.  <li>
+            // seems to have a value attribute, and it seems
+            // to do nothing.  So in the <li> case, we force
+            // textContent:
+            if(isTextWritable(elem))
+                elem.textContent = val;
+        } else {
+            // don't change the active element - it's very annoying
+            // for users if they are trying to copy and paste or type
+            // something in and you change it:
+            if(document.activeElement !== elem) {
+                if(isValueWritable(elem)) {
+                    // inputs/controls, typically:
+                    elem.value = val;
+                } else if(isTextWritable(elem)) {
+                    // normal div or span or whatever
+                    elem.textContent = val;
+                }
+            }
         }
     }
 
@@ -230,14 +306,7 @@ TODO:
       }();
     }
 
-    // this is separate from upFunc because the order matters
-    const updaters = [
-        "scope", // grr should this then be "scopes"?
-        "expands",
-        "controls",
-        "shows",
-    ];
-
+    // update functions, by name:
     const upFunc = {
         scope: function(elem, data, vs) {
             // data = evaluate data[vs]; continue on elem with new data
@@ -301,29 +370,7 @@ TODO:
         },
         shows: function(elem, data, vs) {
             elem[nowShowing] = data;
-            const val = evaluate(data, parseVarSpec(vs));
-
-            if(elem.type === "radio") {
-                // radio buttons are special because there's one
-                // value being show/controlled by multiple elements,
-                // but each of those elements has a (constant) "value"
-                // it sets when selected.  So, it should be selected
-                // if the value matches:
-                elem.checked = val === elem.value;
-            } else {
-                // don't change the active element - it's very annoying
-                // for users if they are trying to copy and paste or type
-                // something in and you change it:
-                if(document.activeElement !== elem) {
-                    if(elem.value === undefined) {
-                        // normal div or span or whatever
-                        elem.textContent = val;
-                    } else {
-                        elem.value = val; // normal inputs, dropdowns etc
-                    }
-                }
-            }
-            
+            doShow(elem, evaluate(data, parseVarSpec(vs)));
             return [ elem, data ];
         },
         controls: function(elem, data, vs) {
@@ -360,7 +407,7 @@ TODO:
     function updateElements(elem, data) {
         const ds = elem.dataset;
         if(ds) {
-            for(const updater of updaters) {
+            for(const updater of controlOrder) {
                 if(ds[updater] !== undefined) {
                     if(breakOn[ds[updater]]) {
                         console.log(`give me a break on ${updater} ${ds[updater]}`);
@@ -391,7 +438,8 @@ TODO:
     }
 
     return {
-        version: 0.2,
+        version: 0.3,
+        initialOptions: options,
         /**
            update() - call this to sync the data to the display
          */

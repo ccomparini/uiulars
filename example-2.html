@@ -1,0 +1,51 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="/fbm.css" type "text/css">
+  </head>
+  <body>
+    <fieldset>
+      <legend>Examples of ways to use @key for keys/values in <code>&lt;select&gt;</code> tags</legend>
+      <div id="shower">
+        <select name="fruit" data-controls="selectedFruit">
+          <option id="fruit-picker" value="@key" data-expands="fruits" data-shows></option>
+        </select>
+        <div>
+          Selected fruit: <span data-shows="selectedFruit"></span>.
+        </div>
+        <select name="fruit-by-value" data-controls="fruitValue">
+          <option data-expands="fruits" data-shows="@key"></option>
+        </select>
+        , the <i>fruit de nuit</i>, looks like <span data-shows="fruitValue"></span>.
+        <br>
+        <div>
+          Or for an array of thingoes (<span data-shows="thingoes"></span>):<br>
+          <select name="thingoes" data-controls="thingoNum">
+            <option disabled selected value=undefined>--- Pick a thingo ---</option>
+            <option data-expands="thingoes" value="@key" data-shows></option>
+          </select>
+          <span data-expands=thingoNum>is element <code>[<span data-shows></span>]</code>.
+        <div>
+      </div>
+    </fieldset>
+  </body>
+  <script src="./uiulator.js"> </script>
+  <script>
+    const data = {
+      fruits: {
+        apple: '🍎',
+        banana: '🍌',
+        bat: '🦇',
+        grapes: '🍇',
+        peach: '🍑',
+      },
+      selectedFruit: 'grapes',
+      fruitValue: '🍑',
+      thingoes: [ 'foo', 'bar', 'bat' ],
+    };
+
+    uiulator(data, document.getElementById("shower"), {
+      'update-on-change': true,
+    }).update();
+  </script>
+<html>
+
