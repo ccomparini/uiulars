@@ -1,0 +1,25 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="/fbm.css" type "text/css">
+  </head>
+  <body>
+    <div>
+      2 * π = <span data-shows="pi*2"></span><br>
+      5 star: <span data-expands="thousand*0.005">*</span><br>
+      2.3 of these should round to 2: <span data-expands="twentyThree*0.1">👍</span><br>
+      I expect 35 of these: <span data-expands="twentyThree*1.5">👍</span><br>
+      <span data-shows="anArray.length"></span>/10 is <span data-shows="anArray.length*.1"></span><br>
+    </div>
+  </body>
+  <script src="./uiulator.js"> </script>
+  <script>
+     uiulator({
+       pi: 3.14159,
+       twentyThree: 23,
+       thousand: 1000,
+       anArray: new Array(49),
+     });
+  </script>
+</html>
+
+

@@ -132,27 +132,44 @@ var uiulator = function(dataSource, elements, options) {
     // being shown)
     const nowShowing = Symbol();
 
+    // returns an object with:
+    //  - varPath:  array of keys representing nested members in data
+    //  - scale: optional amount to scale the data by
     function parseVarSpec(vs) {
-        if(vs === undefined)
-            return [ ];
+        const result = { varPath: [ ] };
+        if(vs !== undefined) {
+            let ppart;
+            [ ppart, result.scale ] = vs.split('*');
 
-        vs = vs.replace(/[^A-Za-z_0-9.]/g, "");
-        if(!vs.length)
-            return [ ];
+            // split the path string on '.' to get the steps we'll
+            // follow to find the specific submember in the provided
+            // data:
+            if(ppart.length) {
+                result.varPath = ppart.split('.');
+            }
 
-        return vs.split(".");
+            // convert the scale to numeric:
+            if(result.scale !== undefined) {
+                result.scale = Number.parseFloat(result.scale);
+            }
+        }
+        return result;
     }
 
-    function evaluate(data, vs) {
-        if(data === undefined || vs === undefined)
+    function evaluate(data, spec) {
+        if(data === undefined || spec === undefined)
             return data;
 
-        for(const varr of vs) {
+        for(const varr of spec.varPath) {
             if(data[varr] == undefined)
                 return undefined;
 
             data = data[varr];
         }
+
+        if(spec.scale !== undefined)
+            data = data*spec.scale;
+
         return data;
     }
 
@@ -219,9 +236,9 @@ var uiulator = function(dataSource, elements, options) {
     function onControlModified(ev) {
         const elem = ev.target;
         const data = elem[nowShowing];
-        const varPath = parseVarSpec(elem.dataset.shows);
-        const specificVar = varPath.pop();
-        const container = evaluate(data, varPath);
+        const vs = parseVarSpec(elem.dataset.shows);
+        const specificVar = vs.varPath.pop();
+        const container = evaluate(data, vs);
         if(container === undefined) {
             console.warn(
                 `Can't set ${varPath}[${specificVar}] because it's undefined`
@@ -306,6 +323,19 @@ var uiulator = function(dataSource, elements, options) {
       }();
     }
 
+    function expanderKeys(data) {
+
+        if(typeof(data) === 'number') {
+            // we've been given a number, so it basically means
+            // "repeat that many times".  create a generator
+            // which generates a sequence of that length (rounded
+            // to nearest):
+            return iterableInteger(Math.round(data));
+        }
+
+        return Object.keys(data);
+    }
+
     // update functions, by name:
     const upFunc = {
         scope: function(elem, data, vs) {
@@ -329,19 +359,13 @@ var uiulator = function(dataSource, elements, options) {
                     // expand for each char:
                     data = [ data ];
                 }
-                    
-                if(Number.isInteger(data)) {
-                    var keys = iterableInteger(data);
-                } else {
-                    var keys = Object.keys(data);
-                }
 
                 // - for each key of data
                 //   - copy elem
                 //   - continue on copy of elem, passing key as vs
                 const oldExpands = elem.dataset.expands;
                 delete elem.dataset.expands;
-                for(const key of keys) {
+                for(const key of expanderKeys(data)) {
                     if(oldGenEls[key]) {
                         // reuse the old element:
                         newGenEls[key] = oldGenEls[key];
