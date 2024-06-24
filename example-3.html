@@ -20,7 +20,7 @@
     </div>
     <div id="settings-controllers">
       <label>
-        <input type="checkbox" id="dynamic-fruitbats" checked>
+        <input type="checkbox" id="dynamic-fruitbats" data-controls="alter-bats" checked>
         Allow automatic additions and deletions.
       </label>
       <label>
@@ -37,7 +37,7 @@
       <label>
         Max population: <input type="number" min="0" max="50" data-controls="maxPopulation"></input>
       </label>
-      <div><span data-shows="changeEvents.length"></span> settings changes have been made</span></div>
+      <div><span data-shows="changeEvents.length"></span> changes have been made to settings.</span></div>
     </div>
     <div>
       <div>
@@ -135,7 +135,7 @@
         ' the Elder', ' the Younger', 'ski', 'ovitch', 'ly',
         ' the Dreadfully Loathsome', 'stein', 'aroni', ' the Strange',
         ' the Ancient', ' the Hippy', 'pie', 'berry', ' the Almighty', 
-        ' the Unlovable', ', PhD', ', Esq.', 'child',
+        ' the Unlovable', ', PhD', ', Esq.', 'child', 'ly',
       ];
 
       // it's getting a suffix or prefix, so remove all quotes:
@@ -281,7 +281,7 @@
         },
     });
     function alterBats() {
-        if(document.getElementById('dynamic-fruitbats').checked) { 
+        if(settings['alter-bats']) { 
             switch(settings.alterationMode) {
                 case 'rand':
                     randomlyAddOrDelete();

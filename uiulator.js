@@ -245,7 +245,10 @@ var uiulator = function(dataSource, elements, options) {
             );
         } else {
             var oldVal = container[specificVar];
-            if(elem.value !== undefined) {
+            if(elem.type === "checkbox") {
+                // checkboxes, too, are special:
+                container[specificVar] = elem.checked;
+            } else if(elem.value !== undefined) {
                 container[specificVar] = elem.value;
             } else {
                 container[specificVar] = elem.innerText;
@@ -282,6 +285,9 @@ var uiulator = function(dataSource, elements, options) {
             // just set all the radio button values to the current
             // value.  :D
             elem.checked = val === elem.value;
+        } else if(elem.type === "checkbox") {
+            // gar checkboxes are an exception as well. sigh
+            elem.checked = !!val;
         } else if(elem.tagName === "OPTION") {
             // OK <option>s are also special.  They need both
             // the value and some kind of content set.  grr.
