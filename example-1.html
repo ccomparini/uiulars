@@ -1,32 +1,67 @@
 <html>
   <head>
-    <link rel="stylesheet" href="/default.css">
     <title>uiulator static display example</title>
+    <link rel="stylesheet" href="/default.css">
+    <style>
+      .example-field {
+        float: inline-flex;
+      }
+      code {
+        white-space: pre;
+      }
+      .comma-list {
+        display: inline;
+        list-style: none;
+      }
+      .comma-list >:after {
+        content: ", ";
+      }
+      /* oops.. the fact that uiulator just makes the prototype
+         element invisible and keeps it as the last element messes
+         up the last-child selector (so we have to select second
+         to last).  should make uiulator remove the prototype. */
+      .comma-list :nth-last-child(2):before {
+        content: " and ";
+      }
+      .comma-list :nth-last-child(2):after {
+        content: "";
+      }
+    </style>
   </head>
   <body>
     <div style="display:flex">
-      <fieldset style="float:inline-flex">
+      <fieldset class="example-field">
         <legend>Example js</legend>
-        <code id="source-code" style="white-space: pre;" data-shows="text">
+        <code id="source-js" data-shows="text">
         </code>
       </fieldset>
 
-      <fieldset style="float: inline-flex;" id="result">
-        <legend>Edit/view data</legend>
+      <fieldset class="example-field">
+        <legend>Example html</legend>
+        <code id="source-html" data-shows>
+        </code>
+      </fieldset>
+
+      <fieldset id="result" class="example-field">
+        <legend>Result</legend>
         <div id="numbershower">
           I consider these numbers lucky:
-          <span data-expands="luckyNumbers" data-shows></span>
+          <span class="comma-list">
+            <span data-expands="luckyNumbers" data-shows></span>.
+          </span>
         </div>
 
         <div id="op-ed" data-scope="opinions">
           <div data-expands>
             <span data-shows="@key"></span> has <span data-shows="length"></span> opinions:
-            <ul> <li data-expands data-shows></li> </ul>
+            <ul>
+             <li data-expands data-shows></li>
+            </ul>
           </div>
         </div>
 
         <div class="numberpicker">
-          <label> select your lucky number here:
+          <label> Select your lucky number here:
             <select name="lucky" data-controls="currentNumber">
               <option data-expands="luckyNumbers" data-shows></option>
             </select>
@@ -39,24 +74,33 @@
     </div>
   </body>
   <script src="./uiulator.js"> </script>
-  <script id=this-script>
+  <script id="setup">
+    const originalHtml = document.getElementById('result').outerHTML;
+  </script>
+  <script id="demo-script">
     const data = {
-      luckyNumbers: [ 7, 8, 23 ],
+      luckyNumbers: [ 7, 8, 23, 42 ],
         opinions: {
           Bob: [ "Green is the best color", "Pizza is too greasy" ],
           Mary: [ "Pizza is great" ],
           Schmedly: [ ],
         },
     };
-    const options = {
-      'update-on-change': true,
-    };
-    uiulator(data, document.getElementById('result'), options);
-
-    // separate instance to show source code:
     uiulator(
-      document.getElementById('this-script'), // show this script
-      document.getElementById('source-code')  // in this html element
+      data, document.getElementById('result'),
+      {
+        'update-on-change': true,
+      }
+    );
+  </script>
+  <script>
+    // this shows the html fragment:
+    uiulator(originalHtml, document.getElementById('source-html'));
+
+    // and this uiulator shows the js source:
+    uiulator(
+      document.getElementById('demo-script'), // show this script
+      document.getElementById('source-js')  // in this html element
     );
   </script>
 </html>
