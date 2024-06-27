@@ -99,12 +99,8 @@
         someData.randomInts.push(Math.floor(Math.random() * 8));
     }
 
-// XXX try passing nothing;  also add options for update intervals
-// so we don't have to setInterval
-    const uil = uiulator(globalThis);
-    window.setInterval(function() {
-        uil.update();
-    }, 250);
+    // undefined = apply to all elements in the page:
+    const uil = uiulator(globalThis, undefined, { 'poll-interval': 250 });
   </script>
 </html>
 
