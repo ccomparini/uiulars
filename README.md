@@ -1,6 +1,8 @@
 uiulator - a simple way to display javascript data in html (in browser).
 
-[Here's a complicated example](https://fbmstudios.net/uiulars/example-3.html) of this simple way.  More example links below.
+Here's [a relatively simple self-referential example](https://fbmstudios.net/uiulars/example-1.html) of how you can use this, and
+here's [a more complicated dynamic example](https://fbmstudios.net/uiulars/example-3.html).
+More example links below.
 
 How to use this:
 
