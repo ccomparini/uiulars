@@ -14,7 +14,7 @@ possible "markers" are:
 - data-shows=&lt;member>    - show the named member of the scope
 - data-expands=&lt;member>  - duplicate for each item in the member
 - data-controls=&lt;member> - set the named member from the value or content of the element
-- data-scope=&lt;member>    - set the scope for all
+- data-scope=&lt;member>    - set the scope for child elements
 
 Then, in you js (someplace), apply the uiulator something like:
 
