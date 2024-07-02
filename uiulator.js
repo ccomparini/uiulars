@@ -69,6 +69,8 @@
                        - container: the containing scope of the changed var
                        - var: the name of the variable which was changed
                        - old: the old value of the variable
+                     The function will be called after the element's events
+                     have been handled.
                    - poll-interval: <numeric microseconds>
                      If specified, a timer will be scheduled to call update()
                      on the specified interval.
@@ -233,6 +235,12 @@ var uiulator = function(dataSource, elements, options) {
         return undefined;
     }
 
+    // schedules the function passed to be run after
+    // element events (onchange etc) have fired
+    function afterEvents(fun) {
+        setTimeout(fun);
+    }
+
     function onControlModified(ev) {
         const elem = ev.target;
         const data = elem[nowShowing];
@@ -256,13 +264,15 @@ var uiulator = function(dataSource, elements, options) {
         }
 
         if(options['update-on-change']) {
-            updateDisplays();
+            afterEvents(() => { updateDisplays(); });
         }
 
         if(options['oncontrolchanged']) {
-            options['oncontrolchanged'](
-                ev, elem, container, specificVar, oldVal
-            );
+            afterEvents(() => {
+                options['oncontrolchanged'](
+                    ev, elem, container, specificVar, oldVal
+                );
+            });
         }
     }
 
