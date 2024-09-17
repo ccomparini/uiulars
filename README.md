@@ -46,7 +46,7 @@ data-control makes a change to data.  Parameters:
     - var: the name of the variable which was changed
     - old: the old value of the variable
 
-- poll-interval: &lt;numeric microseconds>
+- 'poll-interval': &lt;numeric microseconds>
 If specified, a timer will be scheduled to call update()
 on the specified interval.
 - 'update-on-change': &lt;boolean>
