@@ -305,6 +305,11 @@ var uiulator = function(dataSource, elements, options) {
                 elem.value = val;
             if(isTextWritable(elem))
                 elem.textContent = val;
+// XXX this is a weird one:
+            if(typeof(val) === 'undefined')
+                console.log(`HEY WAT option is getting an undefined? ${elem.dataset['Ihidyou']}`);
+            else
+                console.log(`not undefined ${elem.dataset['Ihidyou']}`);
         } else if(elem.tagName === "LI") {
             // yay apparently more tags are special.  <li>
             // seems to have a value attribute, and it seems
@@ -362,6 +367,7 @@ var uiulator = function(dataSource, elements, options) {
             // - hide the element since we just want to show the clones:
             if(!elem[origStyles]) {
                 setExpanderStyle(elem, { display: 'none' });
+elem.dataset['Ihidyou'] = 23;
             }
 
             // - rescope data by vs;
@@ -388,6 +394,7 @@ var uiulator = function(dataSource, elements, options) {
                         delete oldGenEls[key];
                     } else {
                         // no element for this thing yet, so make one:
+elem.dataset['Ihidyou'] = 6666;
                         newGenEls[key] = cloneAndExpand(elem, data, key);
                     }
                     updateElements(newGenEls[key], data);
