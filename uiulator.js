@@ -471,6 +471,34 @@ var uiulator = function(dataSource, elements, options) {
         }
     }
 
+    function initElements(el) {
+        // hack to make <dialog> element work:
+        // (https://github.com/ccomparini/uiulars/issues/3)
+        if(el.tagName === 'DIALOG') {
+            // The "value" attribute on some (but not all) elements
+            // within a dialog can only be set after the dialog is
+            // shown.  So, we need to update dialogs when they are
+            // initially shown.  Since there's no onshow event for
+            // dialogs, we use an observer hack:
+            new MutationObserver(function(mutations)  {
+                for(const mut of mutations) {
+                    if(mut.attributeName === 'open' && el['open']) {
+                        updateElements(el, dataSource);
+                    }
+                }
+            }).observe(el, { attributes: true });
+        }
+        for(const kid of el.children) {
+            initElements(kid);
+        }
+    }
+
+    // initialize elements once:
+    for(const elem of elements) {
+        initElements(elem);
+    }
+
+    // and do an initial upadte:
     updateDisplays();
 
     if(options['poll-interval'] !== undefined) {
