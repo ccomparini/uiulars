@@ -249,7 +249,7 @@ var uiulator = function(dataSource, elements, options) {
         const container = evaluate(data, vs);
         if(container === undefined) {
             console.warn(
-                `Can't set ${varPath}[${specificVar}] because it's undefined`
+                `Can't set ${vs.varPath}[${specificVar}] because it's undefined`
             );
         } else {
             var oldVal = container[specificVar];
