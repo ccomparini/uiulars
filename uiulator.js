@@ -498,7 +498,7 @@ var uiulator = function(dataSource, elements, options) {
         initElements(elem);
     }
 
-    // and do an initial upadte:
+    // and do an initial update:
     updateDisplays();
 
     if(options['poll-interval'] !== undefined) {
@@ -512,6 +512,10 @@ var uiulator = function(dataSource, elements, options) {
            update() - call this to sync the data to the display
          */
         update: updateDisplays,
+
+        setDataSource: function(newDs) {
+            dataSource = newDs;
+        }
     };
 
 };
