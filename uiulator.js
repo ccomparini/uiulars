@@ -207,7 +207,9 @@ var uiulator = function(dataSource, elements, options) {
         let newElem = elem.cloneNode(true);
         rescopeClone(newElem, key);
 
-        restoreStyle(elem);
+        for(const stel in elem[origStyles]) {
+            newElem.style[stel] = elem[origStyles][stel];
+        }
 
         // OK so here's how we'll do it: the new element gets
         // scoped according to the key passed:
