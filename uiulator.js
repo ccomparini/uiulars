@@ -21,8 +21,11 @@
   controlled or displayed:
     - data-shows=<member>    - show the named member of the scope
     - data-expands=<member>  - duplicate for each item in the member
-    - data-controls=<member> - set the named member from the value or content of the element
+    - data-controls=<member> - set the named member from the value
+                               or content of the element
     - data-scope=<member>    - set the scope for all 
+    - data-shows-if=<member> - shows element if member is true in scope
+    - data-shows-unless=<member> - shows element if member is false in scope
 
   For all the above markers, if the member is unspecified (empty string),
   the current scope is used.  "Current scope", in this context, is
@@ -118,6 +121,8 @@ var uiulator = function(dataSource, elements, options) {
     // it always shows the latest state.
     const controlOrder = [
         "scope", // grr should this then be "scopes"?
+        "showsIf",
+        "showsUnless",
         "expands",
         "controls",
         "shows",
@@ -137,6 +142,7 @@ var uiulator = function(dataSource, elements, options) {
     // returns an object with:
     //  - varPath:  array of keys representing nested members in data
     //  - scale: optional amount to scale the data by
+// is scale ever used??
     function parseVarSpec(vs) {
         const result = { varPath: [ ] };
         if(vs !== undefined) {
@@ -201,9 +207,7 @@ var uiulator = function(dataSource, elements, options) {
         let newElem = elem.cloneNode(true);
         rescopeClone(newElem, key);
 
-        for(const stel in elem[origStyles]) {
-            newElem.style[stel] = elem[origStyles][stel];
-        }
+        restoreStyle(elem);
 
         // OK so here's how we'll do it: the new element gets
         // scoped according to the key passed:
@@ -211,6 +215,14 @@ var uiulator = function(dataSource, elements, options) {
         elem.parentElement.insertBefore(newElem, elem);
 
         return newElem;
+    }
+
+    function restoreStyle(elem) {
+        if(elem[origStyles]) {
+            for(const stel in elem[origStyles]) {
+                elem.style[stel] = elem[origStyles][stel];
+            }
+        }
     }
 
     function setExpanderStyle(elem, styleOverride) {
@@ -342,11 +354,29 @@ var uiulator = function(dataSource, elements, options) {
         return Object.keys(data);
     }
 
+    function showIf(elem, data, val) {
+        if(val) {
+            restoreStyle(elem);
+            return [ elem, data ];
+        } else {
+            setExpanderStyle(elem, { display: 'none' });
+            // ... and also stop doing children:
+            return [ undefined, undefined ];
+        }
+    }
+
     // update functions, by name:
     const upFunc = {
         scope: function(elem, data, vs) {
-            // data = evaluate data[vs]; continue on elem with new data
+            // continue on elem with new data;
+            // data = evaluate data[vs] sets the actual scope
             return [ elem, evaluate(data, parseVarSpec(vs)) ];
+        },
+        showsIf: function(elem, data, vs) {
+            return showIf(elem, data, evaluate(data, parseVarSpec(vs)));
+        },
+        showsUnless: function(elem, data, vs) {
+            return showIf(elem, data, !evaluate(data, parseVarSpec(vs)));
         },
         expands: function(elem, data, vs) {
             // - hide the element since we just want to show the clones:
@@ -436,7 +466,7 @@ var uiulator = function(dataSource, elements, options) {
     // updates the element passed, and all its children
     function updateElements(elem, data) {
         const ds = elem.dataset;
-        if(ds) {
+        if(ds && Object.keys(ds).length > 0) {
             for(const updater of controlOrder) {
                 if(ds[updater] !== undefined) {
                     if(breakOn[ds[updater]]) {
@@ -444,7 +474,9 @@ var uiulator = function(dataSource, elements, options) {
                     }
                     [elem, data] = upFunc[updater](elem, data, ds[updater]);
                 }
-                if(!elem) break;
+                if(!elem) {
+                    break;
+                }
             }
         }
 
