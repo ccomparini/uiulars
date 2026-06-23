@@ -224,16 +224,6 @@ var uiulator = function(dataSource, elements, options) {
         }
     }
 
-    function keyForElement(elem) {
-        const ds = elem.dataset;
-        if(ds) {
-            for(const marker of controlOrder) {
-                if(ds[marker] !== undefined)
-                    return ds[marker];
-            }
-        }
-        return undefined;
-    }
 
     // schedules the function passed to be run after
     // element events (onchange etc) have fired
