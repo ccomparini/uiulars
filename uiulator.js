@@ -34,8 +34,8 @@
   in a data-expands.
 
   Additionally, the special "member" '@key' may be used in "data-shows"
-  and "value" to specify the expanded key (the particular case where
-  it's useful for "value" is when setting values for <option> tags).
+  and "value" to specify the expanded key.  This is useful for setting
+  setting values for things like <option> or <button> tags.
 
   See the example*.html files for examples.
 
