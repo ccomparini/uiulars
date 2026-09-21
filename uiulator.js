@@ -233,8 +233,9 @@ var uiulator = function(dataSource, elements, options) {
         }
 
         for(const key in styleOverride) {
-            elem[origStyles][key] = elem.style[key];
-            elem.style[key]       = styleOverride[key];
+            if(!(key in elem[origStyles]))
+                elem[origStyles][key] = elem.style[key];
+            elem.style[key] = styleOverride[key];
         }
     }
 
