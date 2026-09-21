@@ -260,6 +260,12 @@ var uiulator = function(dataSource, elements, options) {
             if(elem.type === "checkbox") {
                 // checkboxes, too, are special:
                 container[specificVar] = elem.checked;
+            } else if(elem.type === "number" || elem.type === "range") {
+                const n = elem.valueAsNumber;
+                if(Number.isNaN(n))
+                    // mid-edit, e.g. the field was cleared
+                    return;
+                container[specificVar] = n;
             } else if(elem.value !== undefined) {
                 container[specificVar] = elem.value;
             } else {
