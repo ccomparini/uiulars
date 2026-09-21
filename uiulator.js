@@ -74,7 +74,7 @@
                        - old: the old value of the variable
                      The function will be called after the element's events
                      have been handled.
-                   - poll-interval: <numeric microseconds>
+                   - poll-interval: <numeric milliseconds>
                      If specified, a timer will be scheduled to call update()
                      on the specified interval.
                    - 'update-on-change': <boolean>
